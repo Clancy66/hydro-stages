@@ -1,0 +1,8 @@
+{
+  "name": "stages",
+  "version": "1.0.0",
+  "description": "精彩活动",
+  "main": "index.ts",
+  "author": "Clancy",
+  "license": "MIT"
+}

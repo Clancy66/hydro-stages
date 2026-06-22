@@ -1,0 +1,1371 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<!-- 🛡️ 注入专业 IDE 级的布局样式与等宽代码块样式 -->
+<style>
+    .manager-hints-textarea { font-family: 'Fira Code', 'Consolas', monospace !important; font-size: 13px !important; line-height: 1.6 !important; background: #1e1e2e !important; color: #cdd6f4 !important; border: 1px solid #313244 !important; padding: 12px 14px !important; box-sizing: border-box; resize: vertical; }
+    .manager-cpp-textarea { font-family: 'Fira Code', 'Consolas', monospace !important; font-size: 13.5px !important; line-height: 1.6 !important; background: #1e293b !important; color: #f8fafc !important; border: 1px solid #334155 !important; padding: 12px 14px !important; box-sizing: border-box; resize: vertical; }
+    .json-valid-indicator { font-size: 0.75rem; font-weight: 700; margin-top: 5px; display: block; }
+    
+    /* 标签页样式 */
+    .tab-nav {
+        display: flex;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.25rem;
+    }
+    .tab-nav-item {
+        padding: 0.75rem 1.2rem;
+        cursor: pointer;
+        font-weight: 600;
+        color: #64748b;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .tab-nav-item.active {
+        color: #0072ff;
+        border-bottom: 2px solid #0072ff;
+    }
+    
+    /* 隐藏非活动标签内容 */
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    
+    /* 天梯轮次表单样式 */
+    .ladder-round-form {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .ladder-round-list {
+        margin-top: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 1rem;
+    }
+
+    .round-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+
+    /* 关卡列表样式 */
+    .stage-item {
+        padding: 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        background: #fafafa;
+    }
+    
+    .stage-item.disabled {
+        background: #fef2f2;
+        opacity: 0.8;
+    }
+    
+    .stage-item.hidden {
+        background: #eff6ff;
+    }
+    
+    .stage-actions {
+        display: flex;
+        gap: 0.3rem;
+        margin-top: 0.75rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn-stage {
+        height: 28px;
+        padding: 0 0.75rem;
+        font-size: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid;
+        cursor: pointer;
+    }
+    
+    .btn-edit { background: #f0f9ff; color: #0369a1; border-color: #bae6fd; }
+    .btn-enable { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+    .btn-disable { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+    .btn-hide { background: #eff6ff; color: #2563eb; border-color: #dbeafe; }
+    .btn-show { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .btn-delete { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+    .btn-restore { background: #f0f9ff; color: #0369a1; border-color: #bae6fd; }
+    
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+    }
+    
+    .status-active { background: #dcfce7; color: #166534; }
+    .status-disabled { background: #fee2e2; color: #991b1b; }
+    .status-hidden { background: #dbeafe; color: #1e40af; }
+
+.import-report {
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    display: none;
+}
+
+.report-header .title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.report-cards {
+    display: flex;
+    gap: 12px;
+}
+
+.card {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    color: #fff;
+}
+
+.card .label {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.card .value {
+    font-size: 22px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.card.total { background: #409eff; }
+.card.success { background: #67c23a; }
+.card.fail { background: #f56c6c; }
+
+.progress-bar {
+    margin-top: 15px;
+    height: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-inner {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #67c23a, #409eff);
+    transition: width 0.4s ease;
+}
+
+.error-box {
+    margin-top: 15px;
+    padding: 12px;
+    border: 1px solid #fbc4c4;
+    border-radius: 8px;
+}
+
+.error-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #f56c6c;
+}
+
+html[data-mantine-color-scheme="dark"] .stage-grid-item  {
+        background-color: #4b4b4b;
+    }
+
+html[data-mantine-color-scheme="dark"] .no-data-placeholder  {
+    background-color: #4b4b4b;
+}
+html[data-mantine-color-scheme="dark"] .stage-type-select {
+    background-color: #4b4b4b;
+}
+
+</style>
+
+<div class="row stages-manager-container">
+    <div class="medium-12 columns">
+        
+        <!-- 📁 标签页导航 -->
+        <div class="tab-nav">
+            <div class="tab-nav-item active" data-tab="stage">🛠️ 新建关卡</div>
+            <div class="tab-nav-item" data-tab="ladder">⚔️ 天梯管理</div>
+            <div class="tab-nav-item" data-tab="disabled-stages">📋 关卡管理</div>
+        </div>
+
+        <!-- 🎮 关卡配置表单 -->
+        <div id="tab-stage" class="tab-content active">
+            <!-- 💡 纯正原生的 Form 表单硬提交，100% 穿透并激活后端的 postCreate 反射入口 -->
+            <form method="post" id="manager-core-native-form" style="display: block; margin: 0; padding: 0;">
+                {% if stage %}<input type="hidden" name="stageId" value="{{ stage._id }}">{% endif %}
+                <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                <input type="hidden" name="operation" value="createStage"> <!-- ✅ 添加操作标识 -->
+
+                <div class="section manager-main-panel" style="border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                    
+                    <!-- 顶层标题导航 -->
+                    <div class="manager-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                        <h1 style="font-size: 1.4rem !important; font-weight: 700 !important; display: inline-flex; align-items: center; gap: 8px; margin: 0;">
+                            🛠️ {% if not stage %}新建关卡{% else %}更新关卡{% endif %}
+                        </h1>
+                        <a href="/stages" class="btn-back-lobby-native" style="border: 1px solid #cbd5e1; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 1rem; border-radius: 16px; font-weight: 600; font-size: 0.8rem;">返回竞技大厅</a>
+                    </div>
+                    <!-- 📌 1. 关卡元数据 -->
+                    <div class="config-card-section" style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.01);">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0072ff; margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 6px;">
+                            📌 1. 元数据
+                        </h3>
+                        
+                        <div class="row">
+                            <div class="medium-4 columns" style="margin-bottom: 1.25rem;">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">📂 选择竞技类型</label>
+                                <select name="type" id="manager-game-type-select" class="stage-type-select" onchange="window.handleGameTypeLayoutSwitch(this.value)" style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box; font-weight: 600;">
+                                    <option value="0" {% if stage.type == 0 %} selected {% endif %}>💡 黑盒破译</option>
+                                    <option value="1" {% if stage.type == 1 %} selected {% endif %}>🔍 代码找茬</option>
+                                    <option value="2" {% if stage.type == 2 %} selected {% endif %}>🧩 代码拼图</option>
+                                    <option value="3" {% if stage.type == 3 %} selected {% endif %}>💾 内存劫变</option>
+                                    <option value="4" {% if stage.type == 4 %} selected {% endif %}>⏱️ 时空刺客</option>
+                                </select>
+                            </div>
+
+                            <div class="medium-4 columns" style="margin-bottom: 1.25rem;">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">📊 关卡展示顺序</label>
+                                <input type="number" name="privilege" value="{{ stage.privilege | default(1) }}" required style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box;">
+                            </div>
+
+                            <div class="medium-4 columns" style="margin-bottom: 1.25rem;">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">🏷️ 竞技关卡名称</label>
+                                <input type="text" name="title" value="{{ stage.title | default('请输入') }}" required style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 12px; width: 100%; box-sizing: border-box; font-size: 0.95rem;">
+                            </div>
+
+                            <div class="medium-4 columns">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">⏱️ 限时挑战时长 (秒)</label>
+                                <input type="number" name="duration" value="{{ stage.duration | default(60) }}" min="10" required style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box;">
+                            </div>
+
+                            <div class="medium-4 columns">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">🔄 限制机会次数</label>
+                                <input type="number" name="maxChances" value="{{ stage.maxChances | default(3) }}" min="1" required style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box;">
+                            </div>
+
+                            <div class="medium-4 columns">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">🪙 通关金币奖励</label>
+                                <input type="number" name="reward" value="{{ stage.reward | default(80) }}" min="0" required style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box; font-weight: 700; color: #eab308;">
+                            </div>
+                        </div>
+                    </div>
+                                    <!-- 📝 2. 玩法内容高阶配置 -->
+                    <div class="config-card-section" style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.01);">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0072ff; margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 6px;">
+                            📝 2. 高阶配置
+                        </h3>
+
+                        <div class="row">
+                            <!-- 📖 关卡场景问题描述 -->
+                            <div class="medium-12 columns">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">📖 场景问题描述 (支持 KaTeX 公式与 Markdown)</label>
+                                <div>
+                                    <textarea name="problem" data-editor class="textbox auto-resize" placeholder="请输入本关卡的背景描述，例如：计算该片段的时间复杂度 $O(n \log n)$" required style="min-height: 140px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; width: 100%; box-sizing: border-box; padding: 10px;">{{ stage.problem }}</textarea>
+                                </div>
+                            </div>
+
+                            <!-- 💡 官方漏洞深度复盘解析 -->
+                            <div class="medium-12 columns">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">💡 深度复盘解析 (支持 KaTeX 公式与 Markdown)</label>
+                                <div>
+                                    <textarea name="analysis" data-editor class="textbox auto-resize" placeholder="请输入详尽的赛后技术复盘解析" required style="min-height: 140px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; width: 100%; box-sizing: border-box; padding: 10px;">{{ stage.analysis }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="dynamic-game-specific-container" style="margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 1.5rem;">
+                            <!-- 🔎 题型 0：黑盒破译专属（线索池 JSON） -->
+                            <div id="game-field-type-0" class="game-specific-field-box" style="display: none;">
+                                <div class="row">
+                                    <div class="medium-12 columns" style="margin-bottom: 1.25rem;">
+                                        <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">🎯 答案关键字列表 (英文逗号隔开，玩家答案包含任一关键字则视为正确)</label>
+                                        <input type="text" name="keywordsRaw" value="{{ stage.keywords }}" id="manager-keywords-input" placeholder="例如: password, token, flag" style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box;">
+                                    </div>
+                                    <div class="medium-12 columns" style="margin-bottom: 1.25rem;">
+                                        <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">📊 阶梯线索配置池 (标准 JSON 数组，text 表示线索内容（string，支持 Katex），cost 表示解锁花费（number）)</label>
+                                        <textarea id="manager-hints-json-textarea" class="textbox manager-hints-textarea" style="height: 120px; border-radius: 6px; width: 100%; box-sizing: border-box; padding: 10px;">{% if stage.hints %}{{ stage.hints | json | safe }}{% else %}[
+  {"text": "线索一", "cost": 0},
+  {"text": "线索二", "cost": 15}
+] {% endif %}</textarea>
+                                        <span id="json-syntax-status" class="json-valid-indicator" style="color: #16a34a;">✅ 线索池 JSON 语法通过</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 🎛️ 题型 3 & 4 专属选择题选项配置区（动态复用 hints 物理位置存储） -->
+                            <div id="game-field-choice-options" class="game-specific-field-box" style="display: none;">
+                                <div class="row">
+                                    <div class="medium-12 columns" style="margin-bottom: 1.25rem;">
+                                        <label id="manager-choice-options-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">📊 选项卡数据源配置池 (标准 JSON 数组)</label>
+                                        <textarea id="manager-choices-json-textarea" class="textbox manager-hints-textarea" style="height: 120px; border-radius: 6px; width: 100%; box-sizing: border-box; padding: 10px;">{{ stage.hints | json | safe }}</textarea>
+                                        <span id="choices-json-syntax-status" class="json-valid-indicator" style="color: #16a34a;">✅ 选项池 JSON 语法通过</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 🔍 通用源码域 -->
+                            <div id="game-field-generic-code" class="game-specific-field-box" style="display: block;">
+                                <div class="row">
+                                    <div class="medium-12 columns" style="margin-bottom: 1.25rem;">
+                                        <label id="manager-code-snippet-dynamic-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">💻 关卡 C++ 源码</label>
+                                        <div id="code-editor-container" style="border-radius: 6px; border: 1px solid #cbd5e1;">
+                                            <textarea name="codeSnippet" id="manager-cpp-source-textarea" class="textbox manager-cpp-textarea" style="display: none;">{% if stage.codeSnippet %}{{ stage.codeSnippet }}{% endif %}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 💡 真实向后端传递的隐藏 hints 物理表单域 -->
+                            <textarea name="hintsRaw" id="hidden-real-submit-hints-field" style="display: none;"></textarea>
+
+                            <!-- 💡 统一智能答案输入域与全新精准引导文案 -->
+                            <div class="row" style="margin-bottom: 0.5rem;">
+                                <div class="medium-12 columns">
+                                    <label id="manager-answer-dynamic-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">🎯 答案设定</label>
+                                    <div id="manager-answer-guide-tip" style="line-height: 1.1rem; font-size: 0.78rem; padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; font-weight: 500; display: block;"></div>
+                                    <input type="text" name="answer" value="{{ stage.answer }}" id="manager-core-answer-input" required style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box; font-weight: 700; color: #0072ff; font-family: monospace;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 🚀 3. 状态控制与发布 -->
+                    <div class="config-card-section" style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.01);">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0072ff; margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 6px;">
+                            🚀 3. 发布状态
+                        </h3>
+                        <div class="row">
+                            <div class="medium-12 columns">
+                                <div class="status-radio-flex-row" style="display: flex; gap: 1.5rem; flex-wrap: wrap; width: 100%;">
+                                    <label style="flex: 1; min-width: 220px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="radio" name="status" value="0" {% if stage.status == 0 %} checked {% endif %} style="margin: 0;">
+                                        <div>
+                                            <b style="color: #16a34a; font-size: 0.9rem; display: block;">🟢 公开常驻 (启用)</b>
+                                            <span style="font-size: 0.75rem; color: #166534;">关卡立即在竞技大厅开放。</span>
+                                        </div>
+                                    </label>
+                                    <label style="flex: 1; min-width: 220px; background: #fff1f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="radio" name="status" value="1" {% if stage.status == 1 %} checked {% endif %} style="margin: 0;">
+                                        <div>
+                                            <b style="color: #dc2626; font-size: 0.9rem; display: block;">🔴 封存锁定 (禁用)</b>
+                                            <span style="font-size: 0.75rem; color: #991b1b;">进入历史库，不在大厅显示，解禁后即为公开。</span>
+                                        </div>
+                                    </label>
+                                    <label style="flex: 1; min-width: 220px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 8px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="radio" name="status" value="2" {% if stage.status == 2 %} checked {% endif %} style="margin: 0;">
+                                        <div>
+                                            <b style="color: #2563eb; font-size: 0.9rem; display: block;">🔵 天梯专属 (隐藏)</b>
+                                            <span style="font-size: 0.75rem; color: #1e40af;">仅在天梯对抗赛区配置后可用。</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🛠️ 底座按钮组 -->
+                    <div class="manager-action-footer-row" style="margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 1.25rem; display: flex; align-items: center; gap: 1rem;">
+                        <button type="submit" class="btn-manager-submit" style="background: linear-gradient(135deg, #00c6ff, #0072ff) !important; color: #ffffff !important; border: none !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 2rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(0, 114, 255, 0.25) !important; line-height: 1 !important; transition: all 0.2s ease !important;">
+                            🚀 发布
+                        </button>
+                        <a href="/stages" class="btn-manager-cancel" style="border: 1px solid #cbd5e1; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 34px; padding: 0 1.5rem; border-radius: 17px; font-weight: 600; font-size: 0.85rem; line-height: 1 !important;">取消</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- ⚔️ 天梯管理 -->
+        <div id="tab-ladder" class="tab-content">
+            <div class="section manager-main-panel" style="border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                
+                <!-- 顶层标题导航 -->
+                <div class="manager-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                    <h1 style="font-size: 1.4rem !important; font-weight: 700 !important; display: inline-flex; align-items: center; gap: 8px; margin: 0;">
+                        ⚔️ 天梯管理
+                    </h1>
+                    <a href="/stages" class="btn-back-lobby-native" style="border: 1px solid #cbd5e1; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 1rem; border-radius: 16px; font-weight: 600; font-size: 0.8rem;">返回竞技大厅</a>
+                </div>
+                
+                <!-- 新建天梯轮次表单 -->
+                <div class="ladder-round-form">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: #0072ff; margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 6px;">
+                        ➕ 新建天梯轮次
+                    </h3>
+                    
+                    <form method="post" action="" style="display: block; margin: 0; padding: 0;">
+                        <input type="hidden" name="csrfToken" value="{{ _csrf }}"> <!-- 注意：后端期望的是 csrfToken -->
+                        <input type="hidden" name="operation" value="createRound"> <!-- ✅ 添加操作标识 -->
+                        <div class="row">
+                            <div class="medium-4 columns" style="margin-bottom: 1.25rem;">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">🏷️ 轮次名称</label>
+                                <input type="text" name="name" placeholder="天梯赛 Round 1" required style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 12px; width: 100%; box-sizing: border-box; font-size: 0.95rem;">
+                            </div>
+
+                            <div class="medium-4 columns" style="margin-bottom: 1.25rem;">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">🔒 准入门槛（准入的最低 RP）</label>
+                                <input type="text" name="limit" placeholder="50" required style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box;">
+                            </div>
+
+                            <div class="medium-4 columns" style="margin-bottom: 1.25rem;">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">🪙 门票定价</label>
+                                <input type="text" name="ticket" placeholder="50" required style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box;">
+                            </div>
+                            
+                            <div class="medium-4 columns">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">🎯 关联关卡</label>
+                                <select name="challengeId" required class="stage-type-select" style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box; font-weight: 600;">
+                                    <option value="">请选择一个关卡</option>
+                                    <!-- 这里应该由后端动态填充所有可用关卡 -->
+                                    {% for stage in ladderStages %}
+                                        <option value="{{ stage._id }}">{{ stage.title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="medium-4 columns">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">⏰ 开始时间</label>
+                                <input type="datetime-local" name="startTime" required style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box;">
+                            </div>
+                            
+                            <div class="medium-4 columns">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">⏱️ 结束时间</label>
+                                <input type="datetime-local" name="endTime" required style="height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 10px; width: 100%; box-sizing: border-box;">
+                            </div>
+                            
+                            <div class="medium-12 columns" style="margin-top: 15px;">
+                            <div id="manager-answer-guide-tip" style="line-height: 1.1rem; font-size: 0.78rem; padding: 8px 12px; border-radius: 6px; font-weight: 500; display: block; background: #f0fdf4; color: #166534;">
+                            ⚔️ <b>天梯对抗规则</b>：新建天梯赛默认置为休眠状态，同一时刻只有一个活跃的天梯赛，后端自动根据当前时间选择活跃的轮次，过期轮次会自动置为休眠，并将与之关联的关卡状态设置为公开，进入竞技大厅常驻。该功能在竞技大厅点击天梯赛选项卡之后自动运行。
+                            </div></div>
+                        </div>
+                        
+                        <div class="manager-action-footer-row" style="margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 1.25rem; display: flex; align-items: center; gap: 1rem;">
+                            <button type="submit" class="btn-manager-submit" style="background: linear-gradient(135deg, #00c6ff, #0072ff) !important; color: #ffffff !important; border: none !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 2rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(0, 114, 255, 0.25) !important; line-height: 1 !important; transition: all 0.2s ease !important;">
+                                🚀 发布
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- 已有轮次列表 -->
+                <div class="ladder-round-form">
+                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: space-between;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0072ff; display: flex; align-items: center; gap: 6px;">
+                            📋 天梯轮次列表
+                        </h3>
+                        <input type="text" id="ladder-stage-search" placeholder="🔍 搜索天梯赛..." style="padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    </div>
+                    
+                    <div class="ladder-round-list">
+                        <div class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; width: 100%;">
+                            {% if rounds.length > 0 %}
+                            {% for round in rounds %}
+                            <div class="stage-grid-item ladder" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+                                <div style="display: flex; font-weight: 600; margin-bottom: 0.5rem; justify-content: space-between;">
+                                    <div>
+                                    <strong>{{ round.name }}</strong>
+                                    {% if round.isActive %}
+                                    <span style="background: #dcfce7; color: #166534; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">🟢 活跃</span>
+                                    {% else %}
+                                    <span style="background: #f1f5f9; color: #475569; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">🔴 休眠</span>
+                                    {% endif %}
+                                    </div>
+                                    <!-- 彻底删除 -->
+                                    <form method="post" style="display: inline-block;">
+                                    <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                    <button type="button" class="btn-stage btn-delete" onclick="handleDeleteLadder('{{ round._id }}')">🗑️ 删除</button>
+                                    </form>
+                                </div>
+                                <div style="font-size: 0.85rem; margin: 0.75rem 0;">
+                                    关联关卡: {% set stageShow = stageMap[round.challengeId] %}
+                                    <span style="font-weight: 600;">
+                                        {{ stageShow.title if stageShow else round.challengeId }}
+                                    </span>
+                                    | 参与人数: {{ stageShow.tried | default(0) }}
+                                </div>
+                                <div style="font-size: 0.85rem; margin: 0.75rem 0;">
+                                    时间: <span class="localized-time" data-timestamp="{{ round.startTime.toISOString() }}"></span> - <span class="localized-time" data-timestamp="{{ round.endTime.toISOString() }}"></span>
+                                </div>
+                                
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="no-data-placeholder" style="grid-column: 1 / -1; text-align: center; padding: 2rem; border-radius: 8px;">
+                            📭 暂无关卡数据
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 🔒 关卡管理标签页 -->
+        <div id="tab-disabled-stages" class="tab-content">
+            <div class="section manager-main-panel" style="border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                
+                <!-- 顶层标题导航 -->
+                <div class="manager-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                    <h1 style="font-size: 1.4rem !important; font-weight: 700 !important; display: inline-flex; align-items: center; gap: 8px; margin: 0;">
+                        📋 关卡管理
+                    </h1>
+                    <a href="/stages" class="btn-back-lobby-native" style="border: 1px solid #cbd5e1; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 1rem; border-radius: 16px; font-weight: 600; font-size: 0.8rem;">返回竞技大厅</a>
+                </div>
+
+                <!-- 📋 批量操作 -->
+                <div class="ladder-round-form">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: #0072ff; margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 6px;">
+                        📋 批量导入导出
+                    </h3>
+
+                    <div class="ladder-round-list">
+                        <div>
+                            <div id="manager-answer-guide-tip" style="line-height: 1.1rem; font-size: 0.78rem; padding: 8px 12px; border-radius: 6px; font-weight: 500; display: block; background: #f0fdf4; color: #166534;">
+                                <b>导出</b>：默认导出所有关卡，不论类型、不论状态。</br>
+                                <b>导入</b>：默认导入的所有关卡均为【禁用】状态，按需调整。
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.75rem; flex-wrap: wrap;">
+                            <!-- 导出 -->
+                            <form method="post" style="display: inline;"> 
+                                <input type="hidden" name="operation" value="exportStages">
+                                <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                <button type="submit" class="btn-stage btn-restore" style="margin: 0;">📤 批量导出关卡</button>
+                            </form>
+                            
+                            <!-- 导入 -->
+                            <div style="position: relative; display: inline;">
+                                <input type="file" id="importJsonFile" accept=".json" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="handleImportJson(this)">
+                                <button class="btn-stage btn-edit" style="margin: 0;">📥 批量导入关卡</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="importReportBox" class="import-report">
+
+                        <div class="report-header">
+                            <div class="title">📊 导入报告</div>
+                        </div>
+
+                        <div class="report-cards">
+
+                            <div class="card total">
+                                <div class="label">总数</div>
+                                <div class="value" id="r-total">0</div>
+                            </div>
+
+                            <div class="card success">
+                                <div class="label">成功</div>
+                                <div class="value" id="r-success">0</div>
+                            </div>
+
+                            <div class="card fail">
+                                <div class="label">失败</div>
+                                <div class="value" id="r-failed">0</div>
+                            </div>
+
+                        </div>
+
+                        <div class="progress-bar">
+                            <div id="progress" class="progress-inner"></div>
+                        </div>
+
+                        <div class="error-box" id="errorBox" style="display:none;">
+                            <div class="error-title">❌ 失败详情</div>
+                            <ul id="r-errors"></ul>
+                        </div>
+
+                    </div>
+                </div>
+                
+                <div class="ladder-round-form">
+                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: space-between;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0072ff; display: flex; align-items: center; gap: 6px;">
+                            📋 禁用关卡列表
+                        </h3>
+                        <div>
+                            <select name="type" id="disable-stage-type-select" class="stage-type-select" onchange="window.handleGameTypeDisable(this.value)" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;">
+                                <option value="-1" selected>全部类型</option>
+                                <option value="💡 黑盒破译" {% if stage.type == 0 %} selected {% endif %}>💡 黑盒破译</option>
+                                <option value="🔍 代码找茬" {% if stage.type == 1 %} selected {% endif %}>🔍 代码找茬</option>
+                                <option value="🧩 代码拼图" {% if stage.type == 2 %} selected {% endif %}>🧩 代码拼图</option>
+                                <option value="💾 内存劫变" {% if stage.type == 3 %} selected {% endif %}>💾 内存劫变</option>
+                                <option value="⏱️ 时空刺客" {% if stage.type == 4 %} selected {% endif %}>⏱️ 时空刺客</option>
+                            </select>
+                        </div>
+                        <input type="text" id="disabled-stage-search" placeholder="🔍 搜索关卡名称..." style="padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    </div>
+
+                    <div class="ladder-round-list">
+                        <div class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; width: 100%;">
+                            {% if banStages.length > 0 %}
+                            {% for stage in banStages %} <!-- 只显示禁用状态的关卡 -->
+                            <div class="stage-grid-item disabled" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+                                <div style="font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">
+                                    <strong>{{ stage.title }}</strong>
+                                    <span class="status-badge status-disabled">🔴 禁用</span>
+                                </div>
+                                
+                                <div class="select-type" style="font-size: 0.85rem; margin: 0.5rem 0;">
+                                    类型: 
+                                    {% if stage.type == 0 %}💡 黑盒破译
+                                    {% elif stage.type == 1 %}🔍 代码找茬
+                                    {% elif stage.type == 2 %}🧩 代码拼图
+                                    {% elif stage.type == 3 %}💾 内存劫变
+                                    {% elif stage.type == 4 %}⏱️ 时空刺客
+                                    {% else %}未知类型
+                                    {% endif %}
+                                    | 次序: {{ stage.privilege }}
+                                    | 挑战人数：{{ stage.tried }}
+                                </div>
+                                
+                                <div class="stage-actions">
+                                    <form method="get" action="/stages/manage" style="display: inline-block;">
+                                        <input type="hidden" name="stageId" value="{{ stage._id }}">
+                                        <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                        <button type="submit" class="btn-stage btn-edit">✏️ 编辑</button>
+                                    </form>
+                                    
+                                    <form method="post" style="display: inline-block;"> 
+                                        <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                        <button type="button" class="btn-stage btn-enable" onclick="handlePublic('{{ stage._id }}')">✅ 上架</button>
+                                    </form>
+
+                                    <form method="post" style="display: inline-block;">
+                                        <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                        <button type="button" class="btn-stage btn-hide" onclick="handleHidden('{{ stage._id }}')">👁️ 隐藏</button>
+                                    </form>
+                                    
+                                    <form method="post" style="display: inline-block;"> 
+                                        <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                        <button type="button" class="btn-stage btn-delete" onclick="handleDelete('{{ stage._id }}')">🗑️ 删除</button>
+                                    </form>
+                                </div>                          
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                                <div class="no-data-placeholder" style="grid-column: 1 / -1; text-align: center; padding: 2rem; border-radius: 8px;">
+                                📭 暂无关卡数据
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 📋 现有关卡列表 -->
+                <div class="ladder-round-form">
+                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: space-between;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0072ff; display: flex; align-items: center; gap: 6px;">
+                            📋 天梯关卡列表
+                        </h3>
+                        <div>
+                            <select name="type" id="hidden-stage-type-select" class="stage-type-select" onchange="window.handleGameTypeHidden(this.value)" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;">
+                                <option value="-1" selected>全部类型</option>
+                                <option value="💡 黑盒破译" {% if stage.type == 0 %} selected {% endif %}>💡 黑盒破译</option>
+                                <option value="🔍 代码找茬" {% if stage.type == 1 %} selected {% endif %}>🔍 代码找茬</option>
+                                <option value="🧩 代码拼图" {% if stage.type == 2 %} selected {% endif %}>🧩 代码拼图</option>
+                                <option value="💾 内存劫变" {% if stage.type == 3 %} selected {% endif %}>💾 内存劫变</option>
+                                <option value="⏱️ 时空刺客" {% if stage.type == 4 %} selected {% endif %}>⏱️ 时空刺客</option>
+                            </select>
+                        </div>
+                        <input type="text" id="hidden-stage-search" placeholder="🔍 搜索关卡名称..." style="padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    </div>
+
+                    <div class="ladder-round-list">
+                        <div class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; width: 100%;">
+                            {% if ladderStages.length > 0 %}
+                            {% for stage in ladderStages %}
+                            <div class="stage-grid-item hidden" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+                                <div style="font-weight: 600; margin-bottom: 0.5rem;">
+                                    <strong>{{ stage.title }}</strong>
+                                    <span class="status-badge status-hidden">
+                                    🔵 隐藏
+                                    </span>
+                                </div>
+                                <div class="select-type" style="font-size: 0.85rem; margin: 0.5rem 0;">
+                                    类型: {% if stage.type == 0 %}💡 黑盒破译 {% elif stage.type == 1 %}🔍 代码找茬 {% elif stage.type == 2 %}🧩 代码拼图 {% elif stage.type == 3 %}💾 内存劫变 {% elif stage.type == 4 %}⏱️ 时空刺客 {% else %}未知类型 {% endif %}
+                                    | 次序: {{ stage.privilege }}
+                                    | 挑战人数：{{ stage.tried }}
+                                </div>
+                                <div class="stage-actions">
+                                    <!-- 编辑 -->
+                                    <form method="get" action="/stages/manage" style="display: inline-block;">
+                                    <input type="hidden" name="stageId" value="{{ stage._id }}">
+                                    <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                    <button type="submit" class="btn-stage btn-edit">✏️ 编辑</button>
+                                    </form>
+
+                                    <form method="post" style="display: inline-block;">
+                                        <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                        <button type="button" class="btn-stage btn-enable" onclick="handlePublic('{{ stage._id }}')">✅ 上架</button>
+                                    </form>
+
+                                    <form method="post" style="display: inline-block;">
+                                        <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                        <button type="button" class="btn-stage btn-disable" onclick="handleDisable('{{ stage._id }}')">❌ 下架</button>
+                                    </form>
+
+                                    <!-- 彻底删除 -->
+                                    <form method="post" style="display: inline-block;">
+                                    <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                    <button type="button" class="btn-stage btn-delete" onclick="handleDelete('{{ stage._id }}')">🗑️ 删除</button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="no-data-placeholder" style="grid-column: 1 / -1; text-align: center; padding: 2rem; border-radius: 8px;">
+                            📭 暂无关卡数据
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 📋 现有关卡列表 -->
+                <div class="ladder-round-form">
+                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: space-between;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0072ff; display: flex; align-items: center; gap: 6px;">
+                            📋 公开关卡列表
+                        </h3>
+                        <div>
+                            <select name="type" id="active-stage-type-select" class="stage-type-select" onchange="window.handleGameTypeActive(this.value)" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;">
+                                <option value="-1" selected>全部类型</option>
+                                <option value="💡 黑盒破译" {% if stage.type == 0 %} selected {% endif %}>💡 黑盒破译</option>
+                                <option value="🔍 代码找茬" {% if stage.type == 1 %} selected {% endif %}>🔍 代码找茬</option>
+                                <option value="🧩 代码拼图" {% if stage.type == 2 %} selected {% endif %}>🧩 代码拼图</option>
+                                <option value="💾 内存劫变" {% if stage.type == 3 %} selected {% endif %}>💾 内存劫变</option>
+                                <option value="⏱️ 时空刺客" {% if stage.type == 4 %} selected {% endif %}>⏱️ 时空刺客</option>
+                            </select>
+                        </div>
+                        <input type="text" id="public-stage-search" placeholder="🔍 搜索关卡名称..." style="padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    </div>
+
+                    <div class="ladder-round-list">
+                        <div class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; width: 100%;">
+                            {% if pubStages.length > 0 %}
+                            {% for stage in pubStages %}
+                            <div class="stage-grid-item active" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+                                <div style="font-weight: 600; margin-bottom: 0.5rem;">
+                                    <strong>{{ stage.title }}</strong>
+                                    <span class="status-badge status-active">
+                                    🟢 启用
+                                    </span>
+                                </div>
+                                <div class="select-type" style="font-size: 0.85rem; margin: 0.5rem 0;">
+                                    类型: {% if stage.type == 0 %}💡 黑盒破译 {% elif stage.type == 1 %}🔍 代码找茬 {% elif stage.type == 2 %}🧩 代码拼图 {% elif stage.type == 3 %}💾 内存劫变 {% elif stage.type == 4 %}⏱️ 时空刺客 {% else %}未知类型 {% endif %}
+                                    | 次序: {{ stage.privilege }}
+                                    | 挑战人数：{{ stage.tried }}
+                                </div>
+                                <div class="stage-actions">
+                                    <!-- 编辑 -->
+                                    <form method="get" action="/stages/manage" style="display: inline-block;">
+                                    <input type="hidden" name="stageId" value="{{ stage._id }}">
+                                    <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                    <button type="submit" class="btn-stage btn-edit">✏️ 编辑</button>
+                                    </form>
+                                    
+                                    <form method="post" style="display: inline-block;">
+                                        <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                        <button type="button" class="btn-stage btn-hide" onclick="handleHidden('{{ stage._id }}')">👁️ 隐藏</button>
+                                    </form>
+
+                                    <form method="post" style="display: inline-block;">
+                                        <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                        <button type="button" class="btn-stage btn-disable" onclick="handleDisable('{{ stage._id }}')">❌ 下架</button>
+                                    </form>
+                                    
+                                    <form method="post" style="display: inline-block;">
+                                    <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                    <button type="button" class="btn-stage btn-delete" onclick="handleDelete('{{ stage._id }}')">🗑️ 删除</button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="no-data-placeholder" style="grid-column: 1 / -1; text-align: center; padding: 2rem; border-radius: 8px;">
+                            📭 暂无关卡数据
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/display/placeholder.js"></script>
+<script>
+let editor = null;
+
+function initEditor() {
+    if (editor) return editor;
+
+    editor = CodeMirror.fromTextArea(
+        document.getElementById('manager-cpp-source-textarea'),
+        {
+            lineNumbers: true,
+            mode: 'text/x-c++src',
+            theme: 'default',
+            height: '300px',
+            indentUnit: 4,
+            tabSize: 4,
+            lineWrapping: true,
+            viewportMargin: Infinity,        // 渲染所有行（避免少行时空白）
+            scrollBarStyle: "native",        // 使用原生滚动条，更稳定
+            // 额外修复：确保光标始终可见
+            extraKeys: {
+                "End": "goLineEnd",
+                "Home": "goLineStart"
+            },
+            // 强制重绘一次（防初始渲染错位）
+            autofocus: true
+        }
+    );
+
+    return editor;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('manager-hints-json-textarea');
+    const choicesarea = document.getElementById('manager-choices-json-textarea');
+
+    try {
+        const textobj = JSON.parse(textarea.value);
+        textarea.value = JSON.stringify(textobj, null, 2);
+        const choicesobj = JSON.parse(choicesarea.value);
+        choicesarea.value = JSON.stringify(choicesobj, null, 2);
+    } catch (e) {
+        console.warn('Hints JSON parse failed:', e);
+    }
+
+    // 本地化时间格式化函数
+    function formatLocalTime(isoString) {
+        if (!isoString) return '';
+        
+        const date = new Date(isoString);
+        
+        if (isNaN(date.getTime())) {
+            return '无效时间';
+        }
+        
+        // 使用中文本地化格式
+        return new Intl.DateTimeFormat('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).format(date);
+    }
+    
+    // 格式化所有带有 localized-time 类的时间元素
+    document.querySelectorAll('.localized-time').forEach(function(element) {
+        const timestamp = element.getAttribute('data-timestamp');
+        element.textContent = formatLocalTime(timestamp);
+        element.title = '原始时间: ' + timestamp; // 鼠标悬停显示原始时间戳
+    });
+    
+    // 格式化 datetime-local 输入框的时间（如果需要预填充）
+    document.querySelectorAll('input[type="datetime-local"]').forEach(function(input) {
+        if (input.value && input.value.endsWith('Z')) {
+            const date = new Date(input.value);
+            if (!isNaN(date.getTime())) {
+                // 转换为本地时间格式（用于编辑）
+                const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+                input.value = localDate.toISOString().slice(0, 16);
+            }
+        }
+    });
+    
+    // 标签页切换功能
+    const tabNavItems = document.querySelectorAll('.tab-nav-item');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabNavItems.forEach(item => {
+        item.addEventListener('click', () => {
+            tabNavItems.forEach(nav => nav.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            item.classList.add('active');
+
+            const tabId = item.getAttribute('data-tab');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            // ✅ 关键：保存当前 tab
+            localStorage.setItem('activeTab', tabId);
+        });
+    });
+
+    const savedTab = localStorage.getItem('activeTab');
+
+    const defaultTab = savedTab || tabNavItems[0].getAttribute('data-tab');
+
+    const params = new URLSearchParams(window.location.search);
+    params.delete('_csrf');
+    const stageId = params.get('stageId');
+
+    if(!stageId) {
+        // 激活 nav
+        tabNavItems.forEach(nav => {
+            nav.classList.toggle('active', nav.getAttribute('data-tab') === defaultTab);
+        });
+
+        // 激活 content
+        tabContents.forEach(content => {
+            content.classList.toggle('active', content.id === `tab-${defaultTab}`);
+        });    
+    }
+    else {
+        params.delete('stageId');
+
+        const newUrl =
+        window.location.pathname +
+        (params.toString() ? `?${params.toString()}` : '');
+
+        window.history.replaceState({}, '', newUrl);
+    }
+
+    // 搜索功能
+    document.getElementById('public-stage-search').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        document.querySelectorAll('.stage-grid-item.active').forEach(item => {
+            const title = item.querySelector('strong').textContent.toLowerCase();
+            if (title.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    document.getElementById('hidden-stage-search').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        document.querySelectorAll('.stage-grid-item.hidden').forEach(item => {
+            const title = item.querySelector('strong').textContent.toLowerCase();
+            if (title.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+    
+    document.getElementById('disabled-stage-search').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        document.querySelectorAll('.stage-grid-item.disabled').forEach(item => {
+            const title = item.querySelector('strong').textContent.toLowerCase();
+            if (title.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    document.getElementById('ladder-stage-search').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        document.querySelectorAll('.stage-grid-item.ladder').forEach(item => {
+            const title = item.querySelector('strong').textContent.toLowerCase();
+            if (title.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    // 新增：处理文件导入
+    window.handleImportJson = async function(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('csrf', document.querySelector('[name="_csrf"]').value);
+        formData.append('operation', 'importStages');
+
+        try {
+            const res = await fetch('/stages/manage', {
+            method: 'POST',
+            body: formData
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || '导入失败');
+            }
+
+            showImportReport(data.report);
+        } catch (e) {
+            alert('导入错误: ' + e.message);
+        } finally {
+            input.value = ''; // 清空文件选择
+        }
+    };
+});
+
+function showImportReport(report) {
+    document.getElementById('importReportBox').style.display = 'block';
+    const total = report.total || 0;
+    const success = report.success || 0;
+    const failed = report.failed || 0;
+
+    document.getElementById('r-total').innerText = total;
+    document.getElementById('r-success').innerText = success;
+    document.getElementById('r-failed').innerText = failed;
+
+    // ✅ 进度条（成功率）
+    const percent = total ? (success / total) * 100 : 0;
+    document.getElementById('progress').style.width = percent + '%';
+
+    // ❌ 错误列表
+    const box = document.getElementById('errorBox');
+    const list = document.getElementById('r-errors');
+    list.innerHTML = '';
+
+    if (report.errors && report.errors.length > 0) {
+        box.style.display = 'block';
+
+        report.errors.forEach(err => {
+            const li = document.createElement('li');
+            li.innerHTML = `<b>#${err.index}</b> ${err.message}`;
+            list.appendChild(li);
+        });
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+// 🛠️ 2. JSON 格式本地实时校验器双向绑定
+function bindJsonValidator(textareaId, statusId) {
+    var tx = document.getElementById(textareaId);
+    var st = document.getElementById(statusId);
+    if (!tx || !st) return;
+    tx.addEventListener('input', function() {
+        try {
+            var parsed = JSON.parse(tx.value);
+            if (!Array.isArray(parsed)) throw new Error("外层必须是中括号包裹的数组结构 []");
+            st.innerText = "✅ JSON 语法通过，格式合法"; st.style.color = "#16a34a";
+        } catch (e) {
+            st.innerText = "❌ 语法错误: " + e.message; st.style.color = "#dc2626";
+        }
+    });
+}
+bindJsonValidator('manager-hints-json-textarea', 'json-syntax-status');
+bindJsonValidator('manager-choices-json-textarea', 'choices-json-syntax-status');
+
+// 🚨【表单提交看门狗】拦截并智能分流灌注数据
+document.getElementById('manager-core-native-form').addEventListener('submit', function(e) {
+    var currentType = parseInt(document.getElementById('manager-game-type-select').value);
+    var realHintsField = document.getElementById('hidden-real-submit-hints-field');
+    
+    if (currentType === 0) {
+        realHintsField.value = document.getElementById('manager-hints-json-textarea').value;
+    } else if (currentType === 3 || currentType === 4) {
+        realHintsField.value = document.getElementById('manager-choices-json-textarea').value;
+    } else {
+        realHintsField.value = "[]";
+    }
+});
+
+// 筛选
+window.handleGameTypeActive = function(selectedType) {
+    const searchTerm = selectedType.toLowerCase();
+    if (searchTerm != "-1") {
+        document.querySelectorAll('.stage-grid-item.active').forEach(item => {
+            const type = item.querySelector('.select-type').textContent.toLowerCase();
+            if (type.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    else {
+        document.querySelectorAll('.stage-grid-item.active').forEach(item => {
+            item.style.display = 'block';
+        });
+    }
+};
+
+window.handleGameTypeHidden = function(selectedType) {
+    const searchTerm = selectedType.toLowerCase();
+    if (searchTerm != "-1") {
+        document.querySelectorAll('.stage-grid-item.hidden').forEach(item => {
+            const type = item.querySelector('.select-type').textContent.toLowerCase();
+            if (type.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    else {
+        document.querySelectorAll('.stage-grid-item.hidden').forEach(item => {
+            item.style.display = 'block';
+        });
+    }
+};
+
+window.handleGameTypeDisable = function(selectedType) {
+    const searchTerm = selectedType.toLowerCase();
+    if (searchTerm != "-1") {
+        document.querySelectorAll('.stage-grid-item.disable').forEach(item => {
+            const type = item.querySelector('.select-type').textContent.toLowerCase();
+            if (type.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    else {
+        document.querySelectorAll('.stage-grid-item.disable').forEach(item => {
+            item.style.display = 'block';
+        });
+    }
+};
+
+// 👑 3. 核心智动规则调度中枢（精准对齐各个竞技的前台对局交互信息）
+window.handleGameTypeLayoutSwitch = function(selectedType) {
+    var typeNum = parseInt(selectedType);
+    var blackboxFieldBox = document.getElementById('game-field-type-0');
+    var choicesFieldBox = document.getElementById('game-field-choice-options');
+    var genericCodeFieldBox = document.getElementById('game-field-generic-code');
+    
+    var codeSnippetLabel = document.getElementById('manager-code-snippet-dynamic-label');
+    var choiceOptionsLabel = document.getElementById('manager-choice-options-label');
+    var answerLabel = document.getElementById('manager-answer-dynamic-label');
+    var answerInput = document.getElementById('manager-core-answer-input');
+    var guideTip = document.getElementById('manager-answer-guide-tip');
+    var choiceTextarea = document.getElementById('manager-choices-json-textarea'); // 移到这里
+
+    // 初始化容器默认展现形态
+    if (blackboxFieldBox) blackboxFieldBox.style.display = 'none';
+    if (choicesFieldBox) choicesFieldBox.style.display = 'none';
+    if (genericCodeFieldBox) genericCodeFieldBox.style.display = 'block';
+    if (answerInput) { answerInput.readOnly = false; answerInput.style.background = "#ffffff"; }
+    if (codeSnippetLabel) codeSnippetLabel.innerText = "💻 关卡 C++ 源码";
+
+    // 🎨 核心逻辑分流与动态全景提示语优化
+    if (typeNum === 0) { //💡 黑盒破译
+        if (blackboxFieldBox) blackboxFieldBox.style.display = 'block';
+        if (genericCodeFieldBox) genericCodeFieldBox.style.display = 'none';
+        answerLabel.innerHTML = "🎯 <b>黑盒破译机制：</b>";
+        guideTip.style.background = "#eff6ff"; guideTip.style.color = "#1e40af";
+        guideTip.innerHTML = "💡 <b>黑盒破译规则</b>：玩家根据线索输入文本内容。答案比对将直接采用上方录入的【关键字列表】进行自动化多重匹配过滤，此处无需手动设定固定答案。";
+        if (answerInput) { 
+            if (!answerInput.value) {
+                answerInput.placeholder = "黑盒破译将自动执行多关键字包含比对，无需配置答案"; 
+            }
+            answerInput.readOnly = true; 
+            answerInput.style.background = "#f1f5f9"; 
+        }
+    } 
+    else if (typeNum === 1) { //🔍 代码找茬
+        answerLabel.innerHTML = "🎯 <b>BUG 所在行号（单个数字）：</b>";
+        guideTip.style.background = "#fff7ed"; guideTip.style.color = "#c2410c";
+        guideTip.innerHTML = "🔍 <b>代码找茬规则</b>：玩家直接在源码上执行点击，高亮行号即为所选答案。请在此处填入存在 BUG 的那一行的<b>绝对行号</b>。";
+        if (answerInput && !answerInput.value) answerInput.placeholder = "1";
+    }
+    else if (typeNum === 2) { //🧩 代码拼图
+        codeSnippetLabel.innerHTML = "💻 关卡 C++ 源码 <span style='color:#ef4444; font-size:0.8rem;'>（请在源码中加入 //=== PUZZLE_START === 和 //=== PUZZLE_END === 注释来标识切块拼图行）</span>";
+        answerLabel.innerHTML = "🎯 <b>正确行号序列（从 1 开始，英文逗号隔开，不要有额外的空格）：</b>";
+        guideTip.style.background = "#f0fdf4"; guideTip.style.color = "#166534";
+        guideTip.innerHTML = "🧩 <b>代码拼图规则</b>：前端会提取注释块内的代码并渲染为可拖拽的独立卡片。请在此处输入它们能组成正确逻辑的<b>相对顺序索引</b>。";
+        if (answerInput && !answerInput.value) answerInput.placeholder = "3,1,2";
+    }
+    // ====== 类型 3：内存劫变 ======
+    else if (typeNum === 3) { //💾 内存劫变
+        // 1. 显示选项区域
+        if (choicesFieldBox) choicesFieldBox.style.display = 'block';
+        if (genericCodeFieldBox) genericCodeFieldBox.style.display = 'none';
+
+        // 2. 强制设置默认 JSON（无论原值是什么）
+
+        const memDefault = `[\n  {"text": "0x00", "status": "FREE"}, {"text": "0x04", "status": "DATA"},\n  {"text": "0x08", "status": "DATA"}, {"text": "0x0C", "status": "DATA"},
+  {"text": "0x10", "status": "FREE"}, {"text": "0x14", "status": "FREE"},\n  {"text": "0x18", "status": "FREE"}, {"text": "0x1C", "status": "FREE"},
+  {"text": "0x00", "status": "FREE"}, {"text": "0x00", "status": "FREE"},\n  {"text": "0x00", "status": "FREE"}, {"text": "0x00", "status": "FREE"},
+  {"text": "0x20", "status": "STACK"}, {"text": "0x24", "status": "STACK"},\n  {"text": "0x28", "status": "FREE"}, {"text": "0x2C", "status": "FREE"}\n]`;
+        
+        if (choiceTextarea) {
+            if (!choiceTextarea.value) choiceTextarea.value = memDefault;
+            // 强制触发 input 事件（即使监听器未注册，也不报错）
+            try {
+                choiceTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+            } catch (e) {  }
+        }
+
+        // 3. 更新 UI 文案
+        choiceOptionsLabel.innerHTML = "📊 <b>物理地址配置池 (标准 JSON 数组，text 表示物理地址（string，支持 Katex），status 表示占用情况（string，支持 Katex），模板的 key 未必正确，请自行调整)</b>";
+        answerLabel.innerHTML = "🎯 <b>存在异常的物理地址（上述 text 中的一个）：</b>";
+        guideTip.style.background = "#fdf2f8"; guideTip.style.color = "#9d174d";
+        guideTip.innerHTML = "💾 <b>内存劫变规则</b>：前端会渲染出物理内存网格，玩家直接在内存网格上点击，选中块即为所选答案。";
+        
+        if (answerInput && !answerInput.value) answerInput.placeholder = "0x04";
+    }
+
+    // ====== 类型 4：时空刺客 ======
+    else if (typeNum === 4) { //⏱️ 时空刺客
+        if (choicesFieldBox) choicesFieldBox.style.display = 'block';
+        
+        const timeDefault = `[\n  {"id": 1, "text": "O(1)"},\n  {"id": 2, "text": "O(log N)"},\n  {"id": 3, "text": "O(N)"},\n  {"id": 4, "text": "O(N log N)"},\n  {"id": 5, "text": "O(N^2)"},\n  {"id": 6, "text": "O(2^N)"}\n]`;
+        
+        if (choiceTextarea) {
+            if (!choiceTextarea.value) choiceTextarea.value = timeDefault;
+            try {
+                choiceTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+            } catch (e) { /* ignore */ }
+        }
+
+        choiceOptionsLabel.innerHTML = "📊 <b>复杂度按钮选项池 (标准 JSON 数组，id 方便比对答案（number，默认从 0 开始），text 表示选项（string，支持 Katex），模板的 key 未必正确，请自行调整)</b>";
+        answerLabel.innerHTML = "🎯 <b>正确时间复杂度 ID（上述 id 中的一个）：</b>";
+        guideTip.style.background = "#f5f5f7"; guideTip.style.color = "#3a3a3c";
+        guideTip.innerHTML = "⏱️ <b>时空刺客规则</b>：题目描述中可以有代码也可以没有，前端会渲染出复杂度单选阵列，玩家直接在阵列上点击，选中块即为所选答案。";
+        
+        if (answerInput && !answerInput.value) answerInput.placeholder = "1";
+    }
+
+    var editor = initEditor();
+    if (!editor.getValue().trim()) {
+        if (typeNum === 1 || typeNum === 4) {
+            editor.setValue(
+`#include <iostream>
+using namespace std;
+
+int main() {
+
+    return 0;
+}`
+            );
+        }
+        if (typeNum === 2) {
+            editor.setValue(
+`#include <iostream>
+using namespace std;
+
+int main() {
+//=== PUZZLE_START ===
+
+//=== PUZZLE_END ===
+
+    return 0;
+}`
+            );
+        }
+    }
+    setTimeout(() => {
+        editor.refresh();
+    }, 0);
+};
+
+var initialSelect = document.getElementById('manager-game-type-select');
+if (initialSelect) { window.handleGameTypeLayoutSwitch(initialSelect.value); }
+
+function handlePublic(id) {
+    if (!confirm('确定要上架该关卡吗？')) return;
+
+    fetch('/stages/manage', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            operation: 'publicStage',
+            stageId: id,
+        })
+    }).then(() => {
+        location.reload();
+    });
+}
+
+function handleHidden(id) {
+    if (!confirm('确定要隐藏该关卡吗？')) return;
+
+    fetch('/stages/manage', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            operation: 'hiddenStage',
+            stageId: id,
+        })
+    }).then(() => {
+        location.reload();
+    });
+}
+
+function handleDisable(id) {
+    if (!confirm('确定要禁用该关卡吗？')) return;
+
+    fetch('/stages/manage', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            operation: 'disableStage',
+            stageId: id,
+        })
+    }).then(() => {
+        location.reload();
+    });
+}
+
+function handleDelete(id) {
+    if (!confirm('确定要永久删除该关卡吗？此操作不可恢复！')) return;
+
+    fetch('/stages/manage', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            operation: 'deleteStage',
+            stageId: id,
+        })
+    }).then(() => {
+        location.reload();
+    });
+}
+
+function handleDeleteLadder(id) {
+    if (!confirm('确定要永久删除该轮次吗？此操作不可恢复！')) return;
+
+    fetch('/stages/manage', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            operation: 'deleteRound',
+            roundId: id,
+        })
+    }).then(() => {
+        location.reload();
+    });
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,358 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<!-- 💡 编程竞技大厅顶级容器 -->
+<div class="row stages-lobby-container">
+    <div class="medium-12 columns">
+        <div class="section lobby-main-panel" style="border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+            
+            <!-- 标题栏大区与管理员便捷创建快捷药丸按钮 -->
+            <div class="lobby-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h1 class="section__title lobby-main-title" style="font-size: 1.6rem !important; font-weight: 700 !important; display: inline-flex; align-items: center; gap: 8px;">
+                    🎮 编程竞技大厅
+                </h1>
+                
+                <!-- 依赖于 coin 插件 -->
+                <div>
+                <a href="/shop" class="btn-lobby-action" style="background: linear-gradient(135deg, #ff9900, #ff5500); color:#fff; text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 1.25rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important; line-height: 1 !important; text-align: center !important; box-sizing: border-box !important; transition: all 0.2s ease !important;">
+                    🛒 神秘商店
+                </a>
+                <!-- 👑 管理员专属提权绿色胶囊按钮（对应后端 postUpdate 出题接收管道） -->
+                {% if handler.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN) %}
+                <a href="/stages/manage" class="btn-lobby-action" style="background: linear-gradient(135deg, #10b981, #059669) !important; color: #ffffff !important; text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 1.25rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important; line-height: 1 !important; text-align: center !important; box-sizing: border-box !important; transition: all 0.2s ease !important;">
+                    ➕ 创建竞技任务
+                </a>
+                {% endif %}
+                </div>
+            </div>
+
+            <!-- 🎛️ 1. 顶层六大游戏卡片选项卡控制台（100% 物理克隆您的设计稿比例与卡片阴影） -->
+            <div class="stage-tab-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 2rem;">
+                <a href="/stages?type=0" class="tab-item-box {% if currentType == 0 %}tab-item-box--active{% endif %}">💡 黑盒破译</a>
+                <a href="/stages?type=1" class="tab-item-box {% if currentType == 1 %}tab-item-box--active{% endif %}">🔍 代码找茬</a>
+                <a href="/stages?type=2" class="tab-item-box {% if currentType == 2 %}tab-item-box--active{% endif %}">🧩 代码拼图</a>
+                <a href="/stages?type=3" class="tab-item-box {% if currentType == 3 %}tab-item-box--active{% endif %}">💾 内存劫变</a>
+                <a href="/stages?type=4" class="tab-item-box {% if currentType == 4 %}tab-item-box--active{% endif %}">⏱️ 时空刺客</a>
+                <a href="/stages?type=5" class="tab-item-box {% if currentType == 5 %}tab-item-box--active{% endif %}">⚔️ 天梯对抗</a>
+            </div>
+
+            <!-- 📋 2. 核心子卡片下挂展示区主面板外壳 -->
+            <div class="sub-tasks-panel" style="border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 6px;">
+                    🎯 
+                    {% set GAME_TITLES = [
+                        "黑盒破译挑战赛题",
+                        "代码漏洞排查关卡", 
+                        "错乱代码堆栈拼图",
+                        "物理内存劫变演练",
+                        "算法时空复杂度估算",
+                        "天梯对抗高级挑战场"
+                    ] %}
+                    {{ GAME_TITLES[currentType] or "未知游戏类型" }}
+                </h3>
+
+                <!-- 动态捕获由后端重定向抛回的金币/门槛不足的动态警告提示框 -->
+                {% if feedbackMsg %}
+                <div class="control-feedback-box" style="display: block; margin-top: 5px; margin-bottom: 15px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; color: #856404; border-radius: 6px; font-size: 0.9rem;">
+                    ⚠️ {{ feedbackMsg }}
+                </div>
+                {% endif %}
+                
+                <!-- 普通 0-4 种基础游戏类型的普通卡片展示分支 -->
+                {% if currentType != 5 %}
+                    {% if stageList and stageList|length > 0 %}
+                        <!-- 💡 绝杀矩阵：通过 CSS Grid 强行锁死为从左到右、每行精确 3 个的工整九宫格平铺方阵 -->
+                        <div class="tasks-matrix-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; width: 100%;">
+                            {% for p in stageList %}
+                                <div class="task-card-item" style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.02)';">
+                                    
+                                    <!-- 卡片上半部分：基础配置参数与计数快照 -->
+                                    <div class="task-card-upper">
+                                        <h4 style="font-size: 1.05rem; font-weight: 600; margin: 0 0 0.5rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 3rem;" title="{{ p.title }}">
+                                            {{ loop.index }}. {{ p.title }}
+                                        </h4>
+                                        <div class="task-meta-row" style="display: flex; gap: 12px; font-size: 0.8rem; color: #64748b; margin-bottom: 0.75rem;">
+                                            <span>⏱️ 限时: <b>{{ p.duration }}s</b></span>
+                                            <span>🔄 机会: <b>{{ p.maxChances }}次</b></span>
+                                            <span>🪙 奖励: <b style="color: #eab308;">{{ p.reward }}</b></span>
+                                        </div>
+                                        <div class="task-history-row" style="font-size: 0.75rem; color: #94a3b8; display: flex; gap: 10px;">
+                                            <span>🟢 通关: {{ p.ac }}人</span>
+                                            <span>🔥 参与: {{ p.tried }}人</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- 卡片下半部分：进入竞技全圆角药丸按钮与 AC 小勾徽章高亮自动化 -->
+                                    <div class="task-card-lower" style="margin-top: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+                                        <a href="/stages?stageId={{ p._id }}" class="btn-lobby-action" style="background: linear-gradient(135deg, #00c6ff, #0072ff); color: #ffffff; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 30px; padding: 0 1.25rem; border-radius: 15px; font-weight: 600; font-size: 0.8rem; box-shadow: 0 4px 10px rgba(0, 114, 255, 0.2); line-height: 1 !important; transition: all 0.2s ease;">
+                                            {% if p.challengeSnapshot %}进入复盘{% else %}⚔️ 开启竞技{% endif %}
+                                        </a>
+
+                                        <!-- 高精战果状态机标签（通过 challengeSnapshot.status 强力点亮相应视觉颜色） -->
+                                        <div class="ac-badge-zone" style="font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;">
+                                            {% if p.challengeSnapshot %}
+                                                {% set STATUS_LABELS = [
+                                                    {"bg": "#e8f0fe", "color": "#1a73e8", "border": "#d2e3fc", "text": "⚔️ 排查中"},
+                                                    {"bg": "#e6f4ea", "color": "#137333", "border": "#ceead6", "text": "✔ 已通关"},
+                                                    {"bg": "#fce8e6", "color": "#c5221f", "border": "#fad2cf", "text": "❌ 次数用尽"},
+                                                    {"bg": "#fef7e0", "color": "#b06000", "border": "#feebb3", "text": "⏳ 挑战超时"}
+                                                ] %}
+                                                {% set statusIdx = p.challengeSnapshot.status or 0 %}
+                                                {% set status = STATUS_LABELS[statusIdx] or STATUS_LABELS[0] %}
+                                                <span style="background: {{ status.bg }}; color: {{ status.color }}; border: 1px solid {{ status.border }}; padding: 2px 8px; border-radius: 10px;">{{ status.text }}</span>
+                                            {% else %}
+                                                <span style="background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; padding: 2px 8px; border-radius: 10px;">⬜ 未挑战</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- 域管理员及高级维护人员快捷删题下架键 -->
+                                    {% if handler.user.hasPriv(PRIV.PRIV_EDIT_SYSTEM) or handler.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN) %}
+                                    <form method="post" style="position: absolute; top: 8px; right: 12px; margin:0;">
+                                        <input type="hidden" name="operation" value="disableStage"> <!-- ✅ 添加操作标识 -->
+                                        <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                        <input type="hidden" name="stageId" value="{{ p._id }}">
+                                        <button type="submit" onclick="return confirm('确定要从全站下架，将状态设置为【禁用】吗？')" style="background:none; border:none; color:#94a3b8; font-size:0.75rem; cursor:pointer; padding:0;" onmouseover="this.style.color='#ef4444';" onmouseout="this.style.color='#94a3b8';">❌ 下架</button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <!-- 📁 强互动空题材提示：原位舒适回响，极大抹平空白加载尴尬 -->
+                        <div class="empty-lobby-box" style="background: #ffffff; border-radius: 10px; padding: 4rem 1rem; text-align: center; border: 1px solid #e2e8f0; color: #94a3b8; box-shadow: 0 2px 12px rgba(0,0,0,0.01);">
+                            <span style="font-size: 3rem; display: block; margin-bottom: 0.75rem;">📁</span>
+                            <div style="font-size: 1.05rem; font-weight: 600; color: #64748b; margin-bottom: 0.25rem;">本赛区关卡筹备中</div>
+                            <div style="font-size: 0.85rem; color: #94a3b8;">当前小游戏类别下暂无公开赛题。管理员正在快马加鞭录入出题，请稍后再来！</div>
+                        </div>
+                    {% endif %}
+                {% else %}
+                <!-- ⚔️ 🌟【天梯对抗赛分裂双栏渲染中心】当选项卡切入至天梯赛 (currentType == 5) 时 -->
+                    {% if ladderStage %}
+                        <!-- 🔧 使用 Flexbox 布局防止侧边栏溢出 -->
+                        <div class="ladder-battleground-row" style="display: flex; gap: 2rem; width: 100%; margin-top: 0.5rem;">
+                            
+                            <!-- Left Column (45%): 本轮天梯专用题配置详情与金币门票解锁控制 -->
+                            <div class="ladder-info-column" style="flex: 0 0 45%; min-width: 0; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+                                <h4 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem 0; border-bottom: 2px solid #ff9900; padding-bottom: 0.5rem; display: inline-block;">
+                                    🏆 {{ activeRound.name }}：{{ ladderStage.title }}
+                                </h4>
+                                
+                                <div class="ladder-stage-detail-card">                                    
+                                    <!-- 动态回传展示这个天梯关卡背后的真实基础题型 -->
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 10px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;">
+                                            🎮 题型归属：
+                                            {% set TYPE_NAMES = [
+                                                "💡 黑盒破译",
+                                                "🔍 代码找茬", 
+                                                "🧩 代码拼图",
+                                                "💾 内存劫变",
+                                                "⏱️ 时空刺客"
+                                            ] %}
+                                            {{ TYPE_NAMES[ladderStage.type] or "未知题型" }}
+                                        </span>
+                                    </div>
+                                    
+
+                                    <!-- 3. ⭐ 新增：对抗赛时间展示区 (核心修改) -->
+                                    <div class="stat-grid" style="margin-bottom: 0.5rem; padding: 0.75rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px;">
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #78350f; margin-bottom: 0.35rem;">
+                                            <span>🚀 对抗赛周期：</span>
+                                            <!-- 状态标签：根据时间逻辑显示不同颜色 -->
+                                            {% if activeRound.isActive == true %}
+                                                <span style="color: #92400e; font-weight: 700; background: #fff3cd; padding: 2px 8px; border-radius: 12px; border: 1px solid #ffe082;">LIVE 🔴 进行中</span>
+                                            {% else %}
+                                                <span style="color: #4b5563; background: #e5e7eb; padding: 2px 8px; border-radius: 12px;">ENDED 🟢 已结束</span>
+                                            {% endif %}
+                                        </div>
+                                        <!-- 时间具体数值 -->
+                                        <div style="font-size: 0.75rem; color: #94a3b8; display: flex; justify-content: space-between; border-top: 1px dashed #fcd34d; padding-top: 0.5rem;">
+                                            <span>开始: <b style="color: #78350f;">{{ startTime }}</b></span>
+                                            <span>截止: <b style="color: #78350f;">{{ endTime }}</b></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- 天梯赛入场静态参数配置条 -->
+                                    <div class="stat-grid" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                        <!-- 1. 限时时长 -->
+                                        <div class="stat-box" style="display: flex; justify-content: space-between; align-items: center; flex: 1 1 calc(50% - 0.25rem); padding: 0.5rem 0.8rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; box-sizing: border-box;">
+                                            <span style="font-size: 0.75rem; color: #b45309; display: inline-flex; align-items: center;">⏱️ 限时时长</span>
+                                            <span style="font-size: 1.1rem; color: #78350f; font-weight: bold;">{{ ladderStage.duration }} s</span>
+                                        </div>
+
+                                        <!-- 2. 排查机会（💡 这里已修复引号问题） -->
+                                        <div class="stat-box" style="display: flex; justify-content: space-between; align-items: center; flex: 1 1 calc(50% - 0.25rem); padding: 0.5rem 0.8rem; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 6px; box-sizing: border-box;">
+                                            <span style="font-size: 0.75rem; color: #1d4ed8; display: inline-flex; align-items: center;">🔄 排查机会</span>
+                                            <span style="font-size: 1.1rem; color: #1e40af; font-weight: bold;">{{ ladderStage.maxChances }} 次</span>
+                                        </div>
+
+                                        <!-- 3. 基础通关金币奖池 -->
+                                        <div class="stat-box" style="flex: 1 1 100%; padding: 0.5rem 0.8rem; background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+                                            <span style="font-size: 0.75rem; color: #15803d; display: inline-flex; align-items: center;">🪙 基础通关金币奖池：</span>
+                                            <b style="font-size: 1.1rem; color: #166534;">+{{ ladderStage.reward }} Coin</b>
+                                        </div>
+
+                                        <!-- 4. 准入门槛限定 -->
+                                        <div class="stat-box" style="flex: 1 1 100%; padding: 0.5rem 0.8rem; background: #faf5ff; border: 1px solid #f3e8ff; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+                                            <span style="font-size: 0.75rem; color: #7e22ce; display: inline-flex; align-items: center;">👑 准入门槛限定：</span>
+                                            <b style="font-size: 0.9rem; color: #6b21a8;">🔑 域内满 {{activeRound.limit}} RP</b>
+                                        </div>
+                                    </div>
+
+                                    <!-- 天梯入场门票解锁控制单表单 -->
+                                    <form method="post" action="/stages">
+                                        <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                        <input type="hidden" name="stageId" value="{{ ladderStage._id }}">
+
+                                        <div style="text-align: center; margin-top: 1rem;">
+                                            {% if ladderChallenge %}
+                                                {% if ladderChallenge.status == 0 %}
+                                                    <a href="/stages?stageId={{ ladderStage._id }}" class="btn-lobby-action" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color:#fff; display:inline-flex; width:100%; height:34px; border-radius:17px; text-decoration:none; font-weight:600;">⚔️ 您正在对局中，立刻重返战场</a>
+                                                {% else %}
+                                                    <a href="/stages?stageId={{ ladderStage._id }}" class="btn-lobby-action" style="justify-content: center; align-items: center;background: #e2e8f0; color:#475569; display:inline-flex; width:100%; height:34px; border-radius:17px; text-decoration:none; font-weight:600;">💡 您已完赛，点击进入现场深度复盘</a>
+                                                    <div style="margin-top:0.5rem; font-size:0.8rem; color:{% if ladderChallenge.status == 1 %}#16a34a{% else %}#dc2626{% endif %}; font-weight:600;">
+                                                        历史战果：{% if ladderChallenge.status == 1 %}🎉 成功突围，斩获天梯奖励！{% else %}❌ 战局惜败（未通关）{% endif %}
+                                                    </div>
+                                                {% endif %}
+                                            {% else %}
+                                                <a href="/stages?stageId={{ ladderStage._id }}" class="btn-lobby-action" style="justify-content: center; align-items: center;background: linear-gradient(135deg, #ff9900, #ff5500); color:#fff; display:inline-flex; width:100%; height:34px; border-radius:17px; border:none; font-weight:700; font-size:0.85rem; box-shadow:0 4px 12px rgba(255,85,0,0.2); cursor:pointer; text-decoration:none;">
+                                                    {% if p.challengeSnapshot %}进入复盘{% else %}🔑 消耗 {{activeRound.ticket | default(0)}} 金币：解锁门票并开启对抗{% endif %}
+                                                </a>
+                                                <span style="font-size:0.75rem; color:#94a3b8; display:block; margin-top:6px;">⚠️ 解锁不扣金币，开始挑战时才正式扣除！</span>
+                                            {% endif %}
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            <!-- Right Column (55%): 前 10 名极客用时、用次风云榜 -->
+                            <div class="ladder-leaderboard-column" style="flex: 0 0 52%; min-width: 0;border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+                                <h4 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem 0; border-bottom: 2px solid #0072ff; padding-bottom: 0.5rem; display: inline-block; align-self: flex-start;">
+                                    ⚡ 本轮天梯对抗极客榜 (TOP 10)
+                                </h4>
+                                
+                                <table class="ladder-rank-table" style="width: 100%; border-collapse: collapse; font-size: 0.9rem; flex-grow: 1;">
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid #e2e8f0; font-weight: 600; text-align: left;">
+                                            <th style="padding: 8px 10px; width: 60px;">排名</th>
+                                            <th style="padding: 8px 10px;">极客选手</th>
+                                            <th style="padding: 8px 10px; text-align: center;">⏱️ 排查耗时</th>
+                                            <th style="padding: 8px 10px; text-align: center;">🔄 尝试次数</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if ladderLeaderboard and ladderLeaderboard|length > 0 %}
+                                            {% for row in ladderLeaderboard %}
+                                                <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='transparent';">
+                                                    <td style="padding: 10px; font-weight: 700;">
+                                                        {% if loop.index == 1 %}<span style="color:#eab308; font-size:1.1rem;">🥇</span>
+                                                        {% elif loop.index == 2 %}<span style="color:#94a3b8; font-size:1.1rem;">🥈</span>
+                                                        {% elif loop.index == 3 %}<span style="color:#b45309; font-size:1.1rem;">🥉</span>
+                                                        {% else %}<span style="color:#64748b; padding-left:4px;">{{ loop.index }}</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td style="padding: 10px; font-weight: 600; color: #334155;">
+                                                        {{ row.playerName }}
+                                                    </td>
+                                                    <td style="padding: 10px; text-align: center; color: #ef4444; font-weight: 700;">
+                                                        {{ row.timeUsed }} 秒
+                                                    </td>
+                                                    <td style="padding: 10px; text-align: center; color: #64748b;">
+                                                        {{ row.chancesUsed }} 次
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="4" style="text-align: center; padding: 4rem 0; color: #94a3b8; font-style: italic; vertical-align: middle;">🚩 硝烟未起：当前暂无任何极客选手成功突围上榜，快来抢占沙发首杀！</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- 天梯赛空题材友好交互回响提示 -->
+                        <div class="empty-lobby-box" style="border-radius: 10px; padding: 4rem 1rem; text-align: center; border: 1px solid #e2e8f0; color: #94a3b8; box-shadow: 0 2px 12px rgba(0,0,0,0.01);">
+                            <span style="font-size: 3rem; display: block; margin-bottom: 0.75rem;">⚔️</span>
+                            <div style="font-size: 1.05rem; font-weight: 600; color: #64748b; margin-bottom: 0.25rem;">天梯对抗蓄势待发</div>
+                            <div style="font-size: 0.85rem; color: #94a3b8;">本赛期暂时没有发布隐藏状态的天梯巅峰任务。请关注大厅公告，等待对抗开启！</div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- 🎨 100% 克隆您截图质感的大厅卡片专用内联 CSS -->
+<style>
+    /* 1. 选项卡格子质感优化（严格对齐设计稿比例） */
+    .tab-item-box {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        padding: 1rem 0.5rem !important;
+        text-align: center !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 52px !important; 
+        font-size: 1.05rem !important;
+        line-height: 1 !important;
+        box-sizing: border-box !important;
+    }
+    
+    .tab-item-box:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 20px rgba(0, 84, 255, 0.08) !important;
+        color: #0084ff !important;
+        border-color: #0084ff !important;
+    }
+    
+    /* 2. 激活态极致渐变美化流（对齐高层高亮质感） */
+    .tab-item-box--active {
+        background: linear-gradient(135deg, #00c6ff, #0072ff) !important;
+        color: #ffffff !important;
+        border-color: transparent !important;
+        box-shadow: 0 6px 16px rgba(0, 114, 255, 0.35) !important;
+    }
+    
+    .tab-item-box--active:hover {
+        color: #ffffff !important;
+        border-color: transparent !important;
+    }
+
+    html[data-mantine-color-scheme="dark"] .ladder-info-column {
+        background-color: #4b4b4b;
+    }
+    
+    html[data-mantine-color-scheme="dark"] .ladder-leaderboard-column  {
+        background-color: #4b4b4b;
+    }
+
+    html[data-mantine-color-scheme="dark"] .task-card-item {
+        background-color: #4b4b4b;
+    }
+
+    html[data-mantine-color-scheme="dark"] .stat-grid {
+        opacity: 0.70;
+    }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('feedbackMsg');
+
+    const newUrl =
+        window.location.pathname +
+        (params.toString() ? `?${params.toString()}` : '');
+
+    window.history.replaceState({}, '', newUrl);
+});
+</script>
+{% endblock %}

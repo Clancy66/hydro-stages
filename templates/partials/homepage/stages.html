@@ -1,0 +1,141 @@
+<style>
+.stages-wrapper { padding: 16px; overflow: visible !important; }
+
+.st-card {
+    border-radius: 12px;
+    padding: 15px 12px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    overflow: visible !important; /* 必须允许溢出 */
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.st-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    padding-bottom: 6px;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.st-text-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px; 
+    justify-content: center;
+    width: 100%; 
+}
+
+.st-text-item {
+    font-size: 13px;
+    color: #444;
+    line-height: 1.4;
+    font-weight: 500;
+    position: relative; 
+    cursor: help; 
+    display: inline-block; 
+    width: fit-content; 
+}
+
+.st-divider {
+    width: 100%;
+    height: 1px;
+    background-color: rgba(33, 133, 208, 0.08); 
+    margin: 2px 0; 
+}
+
+/* 游戏卡片白天主题 */
+.theme-game {
+    background: linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%);
+    border: 2px solid #bae7ff;
+}
+.theme-game .st-icon-box {
+    color: #1890ff;
+    border: 2px solid #1890ff;
+}
+
+/* 🌟 完美的纯自定义按钮：彻底解决语义化框架在暗色下对按钮字体的劣化 */
+.st-action-btn-fixed {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    background-color: #2185d0 !important; /* 基础蓝色 */
+    color: #ffffff !important;            /* 强制白天黑夜文字均为纯白 */
+    font-weight: bold !important;
+    font-size: 13px !important;
+    padding: 10px 24px !important;
+    border-radius: 8px !important;       /* 采用和打卡数据胶囊一致的圆角风格 */
+    box-shadow: 0 2px 6px rgba(33, 133, 208, 0.2) !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;       /* 绝对不换行 */
+    width: auto !important;
+}
+.st-action-btn-fixed:hover {
+    background-color: #1678c2 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+/* 🌟 暗色模式环境盘整 */
+html[data-mantine-color-scheme="dark"] .st-text-box .st-text-item {
+    color: rgba(255, 255, 255, 0.9) !important; /* 暗色下文字明亮 */
+}
+html[data-mantine-color-scheme="dark"] .theme-game {
+    background: linear-gradient(135deg, rgba(230, 247, 255, 0.12) 0%, rgba(240, 245, 255, 0.12) 100%) !important;
+    border: 2px solid rgba(24, 144, 255, 0.25) !important;
+}
+/* 暗色模式下让按钮稍微亮一点，确保极高的对比度 */
+html[data-mantine-color-scheme="dark"] .st-action-btn-fixed {
+    background-color: #359bf0 !important; 
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(53, 155, 240, 0.3) !important;
+}
+</style>
+{% if UserContext._id != 0 %}
+<div class="section side stages-wrapper" style="overflow: visible !important;">
+    <!-- 1. 卡片头部 -->
+    <div class="section__header" style="border-bottom: none; padding: 0;">
+        <h1 class="section__title">
+            <span class="icon icon-gamepad" style="margin-right: 4px;"></span> 编程竞技场
+        </h1>
+    </div>
+    
+    <!-- 2. 卡片主体 -->
+    <div class="section__body typo" style="padding: 0; margin-top: 10px; overflow: visible !important;">
+        <!-- 确保卡片本身也绝对允许溢出 -->
+        <div class="st-card theme-game" style="overflow: visible !important;">
+            <!-- 左侧核心图标 -->
+            <div class="st-icon-box">🎮</div>
+            
+            <!-- 右侧双行介绍 -->
+            <div class="st-text-box">
+                <div class="st-text-item">
+                    趣味竞技挑战全面开放，包含黑盒破译、代码找茬、代码拼图、内存劫变、时空刺客。
+                </div>
+                <!-- 水平分割线 -->
+                <div class="st-divider"></div>
+                <div class="st-text-item">
+                    天梯对抗赛联动玩法，与全站大牛实时对决切磋，赢取丰厚奖励。
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 按钮区域：修复对齐、彻底解决暗色下看不清的问题 -->
+        <div style="text-align: center; margin-top: 15px;">
+            <a href="/stages" class="st-action-btn-fixed">
+                <span class="icon icon-gamepad" style="font-size: 1.1em;"></span> 进入游戏大厅
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endif %}

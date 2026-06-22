@@ -1,0 +1,640 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+/* ========================================================
+   🌟【代码找茬核心样式表 - 第一部分】
+   作用：主面板布局、高亮代码行、全圆角矮化药丸按钮提权
+   ======================================================== */
+
+/* 1. 游戏主双栏大布局 */
+.jigsaw-game-layout {
+    margin-bottom: 2rem;
+}
+
+.jigsaw-panel__header {
+    border-bottom: 1px solid #e8ecef;
+}
+
+.jigsaw-main-panel {
+    background: #ffffff;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.jigsaw-panel__title {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    color: #333333;
+}
+
+.jigsaw-panel__title .title-sub {
+    color: #0084ff;
+    font-size: 1.2rem;
+    margin-left: 0.5rem;
+}
+
+/* 题目描述区挂载样式 */
+.jigsaw-desc-zone {
+    background: #f8f9fa;
+    border-left: 4px solid #0084ff;
+    border-radius: 6px;
+    padding: 0.8rem;
+    border-radius: 0 8px 8px 0;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+html[data-mantine-color-scheme="dark"] .jigsaw-desc-zone {
+    background: #414345;
+    border-left: 4px solid #0084ff;
+}
+
+/* 2. 🟢 初始准备蒙版界面 */
+.jigsaw-init-zone {
+    background: #1a2332;
+    border-radius: 6px;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: #ffffff;
+    margin-top: 1rem;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.3);
+}
+
+.init-main-title {
+    color: #ffffff !important;
+    font-size: 2.2rem !important;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    letter-spacing: 2px;
+}
+
+.init-meta-list {
+    font-size: 1.1rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+}
+
+.init-meta-list span {
+    color: #ffb800;
+    font-weight: 600;
+}
+
+/* ==================== 3. 核心编辑器外壳与自适应代码流 ==================== */
+.jigsaw-editor-shell { 
+    background-color: var(--color-bg-block, rgba(0, 0, 0, 0.02)); 
+    border: 1px solid var(--color-border, #e2e8f0); 
+    margin-top: 1rem;
+    padding: 1rem 0;
+    border-radius: 6px; 
+    padding: 0.75rem 0; 
+}
+    .code-line { display: flex; align-items: center; padding: 0.2rem 0; }
+
+    .line-num { width: 45px; text-align: right; padding-right: 1.25rem; color: var(--color-text-secondary, #7d93b2); font-family: Consolas, Monaco, monospace; font-size: 0.9rem; border-right: 1px solid var(--color-border, #e2e8f0); flex-shrink: 0; opacity: 0.65; }
+
+    /* 🛠️ 暗色修复：让未被打乱的静态原始代码行拥有高清晰度可视对比度 */
+    .code-text { padding-left: 1.25rem; font-family: Consolas, Monaco, "Courier New", monospace; font-size: 0.95rem; white-space: pre; color: var(--color-text, #090a0d); }
+    html[data-mantine-color-scheme="dark"] .code-text { color: #baadad !important; font-weight: bold; }
+
+    /* 内凹拼图工作台 */
+    .jigsaw-sandbox-area { background-color: rgba(0, 0, 0, 0.15) !important; padding: 0.6rem 0.6rem; border-left: 3px solid #0ea5e9; transition: border-color 0.2s; }
+    html[data-mantine-color-scheme="light"] .jigsaw-sandbox-area { background-color: rgba(0, 0, 0, 0.04) !important; }
+    .puzzle-sort-list { display: flex; flex-direction: column; gap: 0.45rem; }
+
+    /* 拖拽块防闪烁变白 */
+    .puzzle-item {
+        background-color: var(--color-bg-panel, #ffffff) !important; border: 1px solid var(--color-border, #e2e8f0) !important;
+        border-radius: 6px; padding: 0.6rem 1rem; display: flex; align-items: center; gap: 0.75rem; cursor: grab; box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+    html[data-mantine-color-scheme="dark"] .puzzle-item { background-color: #1e1f22 !important; border-color: #373a40 !important; }
+    .puzzle-item .code-text { padding-left: 0; color: var(--color-text) !important; }
+    .puzzle-item:hover { border-color: #38bdf8 !important; }
+    .puzzle-item.is-dragging { opacity: 0.3 !important; border-style: dashed !important; background-color: transparent !important; }
+    .drag-handle { color: var(--color-text-secondary, #94a3b8); font-size: 0.95rem; font-weight: bold; cursor: grab; opacity: 0.6; padding-right: 0.25rem; }
+
+/* 4. 🚀 按钮矮化 + 50% 圆角药丸极致美化 */
+.btn-lock-puzzle, .btn-back-lobby-native {
+    border: none !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.2s ease !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 极致精调：调矮高度、拉满全圆角药丸状 */
+    height: 34px !important; 
+    padding: 0 1.5rem !important;
+    border-radius: 17px !important; /* 高度的一半，达成完美的 50% 药丸弧度 */
+    font-size: 0.9rem !important;
+}
+
+/* 锁定提交按钮 */
+.btn-lock-puzzle {
+    background: #f5f5f5 !important;
+    color: #333333 !important;
+    border: 1px solid #e0e0e0 !important;
+    width: 100%;
+}
+
+.btn-lock-puzzle:not([disabled]) {
+    background: linear-gradient(135deg, #ff9900, #ff5500) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(255, 85, 0, 0.25);
+}
+
+.btn-lock-puzzle:not([disabled]):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(255, 85, 0, 0.35);
+}
+
+/* 返回大厅按钮 */
+.btn-back-lobby-native {
+    color: #666666 !important;
+    border: 1px solid #dcdcdc !important;
+    width: 100%;
+    margin-top: 0.75rem;
+}
+
+.btn-back-lobby-native:hover {
+    background: #f8f9fa !important;
+    color: #333333 !important;
+}
+/* ========================================================
+   🌟【代码找茬核心样式表 - 第二部分】
+   作用：控制台网格分拆、预计奖励上下布局、完赛状态原位隐藏切换
+   ======================================================== */
+
+/* 1. 右侧挑战面板外壳 */
+.jigsaw-side-panel {
+    padding: 5px 20px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.control-panel__header {
+    margin-bottom: 1rem !important;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.5rem;
+}
+
+.control-panel__header h1 {
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    color: #33343d;
+}
+
+/* 2. 🎛️ 四宫格布局演变（拆分为上下组合） */
+.stat-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+/* 基础通用卡片 */
+.stat-box {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.stat-title {
+    font-size: 0.85rem !important;
+    color: #64748b;
+    font-weight: 500;
+    margin: 0 !important;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.time-value {
+    color: #ef4444; /* 时间鲜红色高亮 */
+}
+
+.chances-value {
+    color: #0ea5e9; /* 机会天蓝色 */
+}
+
+.reward-value {
+    color: #eab308; /* 金币金黄色 */
+}
+
+.line-value {
+    color: #64748b;
+    font-size: 1rem;
+}
+
+/* 3. 🎯【核心大变动】挑战结束后：原位无闪烁切换为“最终结果与金币大字” */
+
+/* A. 当反馈面板带有 .status-success 类（通关成功）时：
+   利用后代选择器，强行将控制台里的“预计奖励”和“已选行号”卡片完全抹除、彻底隐藏！ */
+.status-success ~ .stat-grid .stat-box:nth-child(3),
+.status-success ~ .stat-grid .stat-box:nth-child(4) {
+    display: none !important;
+}
+
+/* B. 反馈状态面板基础美化（放在四宫格正下方） */
+.control-feedback-box {
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* 🟢 通关成功面板：展现震撼的最终斩获金币大字样式 */
+.status-success {
+    background: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+.feedback-score-num {
+    font-size: 2.2rem !important; /* 膨胀为极其显眼的大字 */
+    font-weight: 800;
+    color: #16a34a; /* 饱满的通过绿 */
+    text-shadow: 0 2px 4px rgba(22, 163, 74, 0.1);
+    margin-bottom: 0.4rem;
+    animation: zoomInPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.feedback-status-msg-text {
+    font-size: 0.9rem;
+    color: #15803d;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+/* 🔴 通关失败面板（次数用尽或超时） */
+.status-failed {
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+}
+
+.status-failed .feedback-score-num {
+    font-size: 2rem !important;
+    font-weight: 800;
+    color: #dc2626; /* 失败暗红 */
+    margin-bottom: 0.4rem;
+}
+
+.status-failed .feedback-status-msg-text {
+    color: #991b1b;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* 4. 🎬 战错复盘对比区（在左侧下方） */
+.jigsaw-review-zone {
+    margin-top: 1.5rem;
+    border-radius: 8px;
+    overflow: hidden;
+    animation: slideUpFade 0.3s ease both;
+}
+
+.review-block {
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.review-block--correct {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+.review-tag--correct {
+    font-weight: 600;
+    color: #16a34a;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.review-code-box {
+    color: #1e293b;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* 5. ✨ 精美微特效动画 */
+@keyframes zoomInPop {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slideUpFade {
+    0% { transform: translateY(10px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+/* ========================================================
+   🎯【像素级终极精调补丁】
+   作用：全量合并为单行横向条状流、按钮文字物理垂直居中
+   ======================================================== */
+
+.stat-grid .stat-box:nth-child(1),
+.stat-grid .stat-box:nth-child(2),
+.stat-grid .stat-box:nth-child(3),
+.stat-grid .stat-box:nth-child(4) {
+    flex: 1 1 100% !important; /* 强行全部拉满 100% 宽度，形成整齐的上下排布 */
+    flex-direction: row !important; /* 统一转为横向流 */
+    align-items: center !important;
+    justify-content: space-between !important; /* 标题靠左，数值靠右 */
+    padding: 0.6rem 0.8rem !important;
+    text-align: left !important;
+}
+
+/* ==================== 5. 左侧下方的技术复盘解析区 ==================== */
+    .complexity-analysis-zone { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--color-border, #e2e8f0); }
+    .analysis-panel-title { font-size: 1.2rem; font-weight: bold; margin: 0 0 1rem 0 !important; color: var(--color-text, #1e293b); }
+
+</style>
+
+<div class="row jigsaw-game-layout">
+    <!-- 💡 绝杀大怪兽：全盘移除任何 form 及 submit 按钮。利用纯 GET 链路和前端 SPA 状态流，打穿所有框架死锁 -->
+    
+    <!-- Left：核心代码与正解解析大区 -->
+    <div class="medium-9 columns">
+        <div class="section jigsaw-main-panel">
+            <div class="jigsaw-panel__header">
+                <h1 class="section__title jigsaw-panel__title">🧩 代码拼图：<span class="title-sub">{{ stage.title }}</span></h1>
+            </div>
+
+            <!-- 题目描述区 -->
+            <h3 class="analysis-panel-title" style="color: #e67e22; margin-top: 10px !important;">📄 关卡描述</h3>
+            <div id="jigsaw-description" class="jigsaw-desc-zone typo richmedia topic__content" data-emoji-enabled>
+                {{ stage.problem | markdown | safe }}
+
+                <p style="font-size: 0.95rem; font-weight: 600; color: #e67e22; margin-top: 1rem !important;">
+                👇在下面的代码编辑区拖动浮动代码块进行排序，，在右侧竞技面板进行锁定提交。
+                </p>
+            </div>
+
+            <!-- 🟢 状态 A：初始准备蒙版 -->
+            {% if (not activeChallenge) and (not historyChallenge) %}
+            <div id="jigsaw-init-mask" class="jigsaw-init-zone">
+                <div class="init-content-box">
+                    <h2 class="init-main-title">准备好了吗?</h2>
+                    <div class="init-meta-list">
+                        <p class="init-meta-item">⏱️ 限时: <span>{{ stage.duration }}</span> 秒 🔄 机会: {{ stage.maxChances }} 次</p>
+                    </div>
+                    <div class="init-meta-list">
+                        <p class="init-meta-item">⏳ 计时挑战：开局后将锁定答题周期，请认真排查！</p>
+                    </div>
+                    <form method="post">
+                    <input type="hidden" name="operation" value="create"> <!-- ✅ 添加操作标识 -->
+                    <button type="submit" class="rounded primary button">🚀 点击开始挑战并计时</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 🔴 状态 B：代码编辑器工作台 -->
+            {% if activeChallenge or historyChallenge %}
+            <div id="jigsaw-game-workspace" class="jigsaw-editor-shell no-select-zone">
+                {% set lines = stage.codeSnippet.split('\n') %}
+                {% set inPuzzleZone = false %}
+                {% set globalIndex = 0 %}
+                {% set puzzleIndex = 0 %}
+
+                <!-- 🟢 初始开启第一个只读静态块 -->
+                <div class="code-static-block">
+                {% for line in lines %}
+                    {% set globalIndex = globalIndex + 1 %}
+                    
+                    {% if "PUZZLE_START" in line %}
+                        {% set inPuzzleZone = true %}
+                        {% set globalIndex = globalIndex - 1 %}
+                        </div> <!-- 闭合上半只读块 -->
+                        <!-- 📦 嵌入式可拖拽拼图沙盒区 -->
+                        <div id="jigsaw-sandbox" class="jigsaw-sandbox-area" style="margin: 10px 0;">
+                            <div id="sortable-puzzle-list" class="puzzle-sort-list">
+                    {% elif "PUZZLE_END" in line %}
+                        {% set inPuzzleZone = false %}
+                        {% set globalIndex = globalIndex - 1 %}
+                            </div>
+                        </div> <!-- 闭合拼图沙盒区 -->
+                        <!-- 🔴 开启下半只读静态块 -->
+                        <div class="code-static-block">
+                    {% else %}
+                        {# 根据当前状态进行差异化渲染 #}
+                        {% if inPuzzleZone %}
+                            {% set puzzleIndex = puzzleIndex + 1 %}
+                            <!-- 🎯 可拖拽代码行：绑死其原始初始相对顺序 data-origin-order -->
+                            <div class="puzzle-item" draggable="true" data-origin-order="{{ puzzleIndex }}">
+                                <span class="drag-handle" style="color: #a1a1aa; cursor: grab;">⸪⸪</span>
+                                <code class="code-text" style="white-space: pre; font-family: monospace;">{{ line }}</code>
+                            </div>
+                        {% else %}
+                            <!-- 🔒 固定的外部只读行，保持全局原样递增的行号 -->
+                            <div class="code-line" style="opacity: 0.6;">
+                                <span class="line-num" style="min-width: 30px; display: inline-block;">{{ globalIndex }}</span>
+                                <span class="code-text" style="white-space: pre; font-family: monospace;">{{ line }}</span>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                </div> <!-- 闭合最后的只读块 -->
+            </div>
+
+            {% endif %}
+
+            {% if historyChallenge %}
+            <div id="complexity-analysis-panel" class="complexity-analysis-zone">
+            <h3 class="analysis-panel-title" style="color: #e67e22;">💡 答案解析</h3>
+            <div id="jigsaw-description" class="jigsaw-desc-zone typo richmedia topic__content" data-emoji-enabled>
+                {{ stage.analysis | markdown | safe }}
+            </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right：控制台 -->
+    <div class="medium-3 columns">
+        <div class="section side jigsaw-side-panel">
+            <div class="section__header control-panel__header"><h1 class="section__title">竞技面板</h1></div>
+            <div class="section__body control-panel__body">
+                
+                <div class="stat-grid">
+                    <!-- 战局彻底结束后，顶部“剩余时间”与“剩余机会”自动隐藏剥离 -->
+                    {% if activeChallenge %}
+                        <div class="stat-box">
+                            <span class="stat-title">⏳ 剩余时间</span>
+                            <span id="jigsaw-timer-display" class="stat-value time-value">{{ activeChallenge.timeLeft }}s</span>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-title">🔄 剩余机会</div>
+                            <span id="jigsaw-chances-display" class="stat-value chances-value">{{ stage.maxChances - activeChallenge.chancesUsed }}</span>
+                        </div>
+                    {% endif %}
+
+                    <!-- 战局结束后，该位置原位无缝替换展现答案成败状态大卡片 -->
+                    {% if historyChallenge %}
+                        <div class="stat-box" style="flex: 1 1 100%; flex-direction: column !important; align-items: center !important; text-align: center !important; padding: 1rem !important; margin-bottom: 0.5rem; border-radius: 8px;
+                            {% if historyChallenge.status == 1 %}background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a;
+                            {% else %}background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;{% endif %}">
+                            <span style="font-size: 1.3rem; font-weight: 800;">
+                                {% if historyChallenge.status == 1 %}🎉 答案正确
+                                {% elif historyChallenge.status == 2 %}❌ 机会用尽
+                                {% elif historyChallenge.status == 3 %}⏰ 挑战超时
+                                {% endif %}
+                            </span>
+                        </div>
+                    {% endif %}
+
+                    <!-- 挑战结束替换为“最终奖励”，挑战中显示“预计奖励” -->
+                    <!-- 🪙 最终/预计奖励卡片 -->
+                    <div class="stat-box">
+                        <span class="stat-title">{% if historyChallenge %}🪙 最终奖励{% else %}🪙 预计奖励{% endif %}</span>
+                        <!-- 💡 绝杀空白：如果没有读到数字，直接采用 Nunjucks 默认值过滤器强制展示 0 -->
+                        <span id="jigsaw-reward-display" class="stat-value reward-value">
+                            {% if historyChallenge %}{{ finalDisplayReward | default(0) }}{% else %}{{ stage.reward or 60 }}{% endif %}
+                        </span>
+                    </div>
+
+                    <!-- 📍 已选行号卡片 -->
+                    <div class="stat-box">
+                        <span class="stat-title">📍 已排顺序</span>
+                        <span id="jigsaw-selected-lines" class="stat-value line-value" style="font-weight: 700;">
+                            {% if historyChallenge %}
+                                <!-- 💡 绝杀半截字：判断后端下发的内容，如果是“暂无”则直接直出；如果是数字，则规范拼装为第 X 行 -->
+                                {% if finalDisplayLine == "暂无" or (not finalDisplayLine) %}
+                                    暂无
+                                {% else %}
+                                    {{ finalDisplayLine }}
+                                {% endif %}
+                            {% else %}
+                                暂无
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 答错时的排错文字反馈面板 -->
+                {% if feedbackMsg %}
+                <div class="control-feedback-box status-warning" style="display: block; margin-top: 15px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; color: #856404;">
+                    <div class="feedback-status-msg-text">⚠️ {{ feedbackMsg }}</div>
+                </div>
+                {% endif %}
+
+                <div class="control-action-zone" style="margin-top: 20px;">
+                    <!-- 💡 体验升级：锁定提交按钮，通过异步无刷新执行精确的 GET 战局核验 -->
+                    <form method="post">
+                    <input type="hidden" name="operation" value="submit"> <!-- ✅ 添加操作标识 -->
+                    <input type="hidden" id="input-selected-line" name="selectedLine" value="">
+                    <button type="submit" id="btn-submit-jigsaw" class="btn-lock-puzzle" {% if not activeChallenge %}disabled style="opacity:0.5; cursor:not-allowed;"{% endif %}>🔒 锁定答案提交</button>
+                    </form>
+                    <a href="/stages?type=2" class="btn-back-lobby-native" style="margin-top: 15px; display: block; text-align: center; text-decoration: none; line-height: 34px;">返回竞技大厅</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="hydro-stage-id-carrier" style="display:none;" data-id="{{ stage._id }}"></div>
+
+
+<!-- ⏱️ 🌟【核心升级点 2（续）：高精度前端实时计时器与超时自动判定刷新强制重载刷新同步触发】 -->
+{% if activeChallenge %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var sortableList = document.getElementById('sortable-puzzle-list');
+    var selectedLinesDisplay = document.getElementById('jigsaw-selected-lines');
+    var hiddenInputLine = document.getElementById('input-selected-line');
+    var dragEl = null;
+    var timerEl = document.getElementById('jigsaw-timer-display');
+
+    // 🛠️ 核心同步函数：重置明面视觉索引 + 实时收集逻辑序列送往控制台与隐藏域
+    function updateDragResult() {
+        if (!sortableList) return;
+        var items = sortableList.querySelectorAll('.puzzle-item');
+        var currentSequence = [];
+
+        items.forEach(function(item, index) {
+            // 1. 丝滑重置左侧拼图区明面索引（始终保持直观的从 1 开始顺延）
+            var numDisplay = item.querySelector('.puzzle-line-num');
+            if (numDisplay) {
+                numDisplay.textContent = index + 1;
+            }
+            // 2. 捕获该行原始重置索引，并推入序列数组
+            var originOrder = item.getAttribute('data-origin-order');
+            currentSequence.push(originOrder);
+        });
+
+        // 3. 将数组转化为逗号分隔字符串 (例如 "3,1,2,5,4")
+        var finalResultStr = currentSequence.join(',');
+
+        // 4. 同步更新右侧控制面板呈现
+        if (selectedLinesDisplay) {
+            selectedLinesDisplay.textContent = finalResultStr ? finalResultStr : "暂无";
+        }
+        // 5. 同步打入 POST 表单隐藏域，以便用户点击“锁定答案提交”时直接传回后端
+        if (hiddenInputLine) {
+            hiddenInputLine.value = finalResultStr;
+        }
+    }
+
+    // 🚀 绑定 HTML5 原生拖拽流事件
+    if (sortableList) {
+        sortableList.addEventListener('dragstart', function(e) {
+            var target = e.target.closest('.puzzle-item');
+            if (!target) return;
+            dragEl = target;
+            target.classList.add('is-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        sortableList.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            var target = e.target.closest('.puzzle-item');
+            if (!target || target === dragEl) return;
+
+            var box = target.getBoundingClientRect();
+            var offset = e.clientY - box.top - box.height / 2;
+            
+            if (offset < 0) {
+                sortableList.insertBefore(dragEl, target);
+            } else {
+                sortableList.insertBefore(dragEl, target.nextSibling);
+            }
+        });
+
+        sortableList.addEventListener('dragend', function() {
+            if (dragEl) {
+                dragEl.classList.remove('is-dragging');
+            }
+            dragEl = null;
+            // 💡 关键点：拖拽释放并完成位置交换后，实时核算新排序并同步
+            updateDragResult();
+        });
+
+        // 页面首次加载就绪时，先执行一次初始状态数据收集 (默认 1,2,3...)
+        updateDragResult();
+    }
+    // 2. 辅助视觉时钟倒计时
+    var timeLeft = parseInt("{{ activeChallenge.timeLeft }}") || 0;
+    var clock = setInterval(function() {
+        timeLeft--;
+        if (timerEl) timerEl.textContent = timeLeft + "s";
+        if (timeLeft <= 0) {
+            clearInterval(clock);
+            window.location.reload(); // 超时原地刷新，后端绝对物理时间会自动接管为超时战败
+        }
+    }, 1000);
+});
+</script>
+
+{% endif %}
+
+{% endblock %}
