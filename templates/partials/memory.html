@@ -537,7 +537,7 @@ html[data-mantine-color-scheme="dark"] .jigsaw-desc-zone {
                 <!-- 答错时的排错文字反馈面板 -->
                 {% if feedbackMsg %}
                 <div class="control-feedback-box status-warning" style="display: block; margin-top: 15px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; color: #856404;">
-                    <div class="feedback-status-msg-text">⚠️ {{ feedbackMsg }}</div>
+                    <div class="feedback-status-msg-text">{{ feedbackMsg }}</div>
                 </div>
                 {% endif %}
 

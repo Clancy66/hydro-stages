@@ -329,7 +329,7 @@ class StagesHandler extends Handler {
 
                 // 依赖于金币插件
                 const currentLog = "[购买天梯赛入场券] " + activeRound.name;
-                await BillsModel.add(this.user._id, this.user._id, "", activeRound.ticket, currentLog, true);
+                await BillsModel.add(this.user._id, this.user._id, "", activeRound.ticket, currentLog, 2);
                 await CoinsModel.inc(this.user._id, { total: -activeRound.ticket });
             }
             await StagesChallengeModel.coll.insertOne({
@@ -395,7 +395,7 @@ class StagesHandler extends Handler {
         if (absoluteTimeUsed > stage.duration) {
             await StagesChallengeModel.updateProgress(challenge._id, {
                 $set: { status: 3, timeUsed: stage.duration, finalSelectedLine: userInput },
-                $push: { content: `[TIMEOUT] 战局超时。` }
+                $push: { content: `[TIMEOUT] 战局超时，自动提交。` }
             });
             this.response.redirect = `/stages?stageId=${stageId.toHexString()}`;
             return;
@@ -411,8 +411,8 @@ class StagesHandler extends Handler {
             const finalReward = Math.max(0, basicReward - hintCost);
 
             // 更新金币账单，依赖金币插件
-            const currentLog = "[竞技奖励] " + stage.title;
-            await BillsModel.add(this.user._id, this.user._id, "", finalReward, currentLog, true);
+            const billLog = "[竞技奖励] " + stage.title;
+            await BillsModel.add(this.user._id, this.user._id, "", finalReward, billLog, 2);
             await CoinsModel.inc(this.user._id, { total: finalReward, stages: finalReward });
 
             // 🎉 成功通关 (status: 1)
@@ -422,12 +422,7 @@ class StagesHandler extends Handler {
             });
             await StagesModel.incCounter(stageId, 'ac');
             
-            if (stage.status === 2) {                
-                this.response.redirect = `/stages?type=5&feedbackMsg=🎉 斩获天梯大奖！`;
-                return;
-            }
-            
-            this.response.redirect = `/stages?stageId=${stageId.toHexString()}`;
+            this.response.redirect = `/stages?stageId=${stageId.toHexString()}&feedbackMsg=🎉 恭喜通关，斩获大奖！`;
         } else {
             if (remainingChances <= 0) {
                 // 次数用尽战败 (status: 2)
@@ -448,8 +443,11 @@ class StagesHandler extends Handler {
                     $push: { content: `${currentLog} (不正确)` }
                 });
                 
-                const wrongMsg = stage.type === 0 ? `口令未击中漏洞链，请继续破译！` : `结果不正确，请重新排查！`;
-                this.response.redirect = `/stages?stageId=${stageId.toHexString()}&feedbackMsg=${wrongMsg}`;
+                let wrongMsg = "";
+                if (stage.type === 0) wrongMsg = `口令未击中，请继续破译！`;
+                else if (stage.type === 2) wrongMsg = `结果不正确，请重新排序！`;
+                else wrongMsg = `结果不正确，请重新排查！`;
+                this.response.redirect = `/stages?stageId=${stageId.toHexString()}&feedbackMsg=⚠️ ${wrongMsg}`;
             }
         }
     }
@@ -942,4 +940,6 @@ class StagesManageHandler extends Handler {
 export function apply(ctx: any) {
     ctx.Route('stages_main_route', '/stages', StagesHandler);
     ctx.Route('stages_manager_route', '/stages/manage', StagesManageHandler);
+
+    ctx.injectUI('UserDropdown', 'stages_main_route', { icon: 'web', displayName: '编程竞技' }, PRIV.PRIV_USER_PROFILE);
 }

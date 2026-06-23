@@ -230,8 +230,6 @@ export class StagesModel {
         if (cleanFields.keywords !== undefined) cleanFields.keywords = Array.isArray(cleanFields.keywords) ? cleanFields.keywords.map(k => k.trim()) : [];
         if (cleanFields.hints !== undefined) cleanFields.hints = Array.isArray(cleanFields.hints) ? cleanFields.hints : [];
 
-        console.log(cleanFields);
-        
         const result = await stagesCollection.updateOne(
             { _id: id },
             { $set: cleanFields }
