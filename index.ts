@@ -410,7 +410,7 @@ class StagesHandler extends Handler {
                 rootId: this.user._id,
                 uid: this.user._id,
                 goodsId: "",
-                coins: -finalReward,
+                coins: finalReward,
                 content: billLog,
                 check: 2
             });
