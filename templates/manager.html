@@ -276,7 +276,7 @@ html[data-mantine-color-scheme="dark"] .stage-type-select {
                             <div class="medium-12 columns">
                                 <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">📖 场景问题描述 (支持 KaTeX 公式与 Markdown)</label>
                                 <div>
-                                    <textarea name="problem" data-editor class="textbox auto-resize" placeholder="请输入本关卡的背景描述，例如：计算该片段的时间复杂度 $O(n \log n)$" required style="min-height: 140px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; width: 100%; box-sizing: border-box; padding: 10px;">{{ stage.problem }}</textarea>
+                                    <textarea name="problem" data-editor class="textbox auto-resize" placeholder="请输入本关卡的背景描述，例如：计算该片段的时间复杂度 $O(n \log n)$" style="min-height: 140px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; width: 100%; box-sizing: border-box; padding: 10px;">{{ stage.problem }}</textarea>
                                 </div>
                             </div>
 
@@ -808,10 +808,12 @@ html[data-mantine-color-scheme="dark"] .stage-type-select {
         </div>
     </div>
 </div>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/display/placeholder.js"></script>
+
 <script>
 let editor = null;
 
@@ -1130,7 +1132,7 @@ window.handleGameTypeHidden = function(selectedType) {
 window.handleGameTypeDisable = function(selectedType) {
     const searchTerm = selectedType.toLowerCase();
     if (searchTerm != "-1") {
-        document.querySelectorAll('.stage-grid-item.disable').forEach(item => {
+        document.querySelectorAll('.stage-grid-item.disabled').forEach(item => {
             const type = item.querySelector('.select-type').textContent.toLowerCase();
             if (type.includes(searchTerm)) {
                 item.style.display = 'block';
@@ -1140,7 +1142,7 @@ window.handleGameTypeDisable = function(selectedType) {
         });
     }
     else {
-        document.querySelectorAll('.stage-grid-item.disable').forEach(item => {
+        document.querySelectorAll('.stage-grid-item.disabled').forEach(item => {
             item.style.display = 'block';
         });
     }
@@ -1229,7 +1231,7 @@ window.handleGameTypeLayoutSwitch = function(selectedType) {
     else if (typeNum === 4) { //⏱️ 时空刺客
         if (choicesFieldBox) choicesFieldBox.style.display = 'block';
         
-        const timeDefault = `[\n  {"id": 1, "text": "O(1)"},\n  {"id": 2, "text": "O(log N)"},\n  {"id": 3, "text": "O(N)"},\n  {"id": 4, "text": "O(N log N)"},\n  {"id": 5, "text": "O(N^2)"},\n  {"id": 6, "text": "O(2^N)"}\n]`;
+        const timeDefault = `[\n  {"id": 1, "text": "$O(1)$"},\n  {"id": 2, "text": "$O(\\log N)$"},\n  {"id": 3, "text": "$O(N)$"},\n  {"id": 4, "text": "$O(N \\log N)$"},\n  {"id": 5, "text": "$O(N^2)$"},\n  {"id": 6, "text": "$O(2^N)$"}\n]`;
         
         if (choiceTextarea) {
             if (!choiceTextarea.value) choiceTextarea.value = timeDefault;
@@ -1283,8 +1285,6 @@ var initialSelect = document.getElementById('manager-game-type-select');
 if (initialSelect) { window.handleGameTypeLayoutSwitch(initialSelect.value); }
 
 function handlePublic(id) {
-    if (!confirm('确定要上架该关卡吗？')) return;
-
     fetch('/stages/manage', {
         method: 'POST',
         headers: {

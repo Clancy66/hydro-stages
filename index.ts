@@ -1,6 +1,7 @@
 import { Handler, ObjectId, PRIV, ForbiddenError, BadRequestError, NotFoundError, param, Types, db, moment } from 'hydrooj';
 import { StagesModel, StagesChallengeModel } from './models';
 import { promises as fs } from 'fs';
+
 // 依赖于金币插件
 import { CoinsModel, BillsModel } from 'coin/model';
 
@@ -12,13 +13,6 @@ const TYPE_MAP: Record<number, string> = {
     3: 'partials/memory.html',       // 💾 内存劫变
     4: 'partials/complexity.html'    // ⏱️ 时空刺客
 };
-
-function safeObjectId(id: any) {
-    if (!id) return new ObjectId();
-    if (typeof id !== 'string') return new ObjectId();
-    if (!/^[0-9a-fA-F]{24}$/.test(id)) return new ObjectId();
-    return new ObjectId(id);
-}
 
 function toDate(v: any) {
     const d = new Date(v);
@@ -638,7 +632,7 @@ class StagesManageHandler extends Handler {
 
         const { stageId, type, title, problem, answer, analysis, duration, maxChances, reward, status, privilege, keywordsRaw, hintsRaw, codeSnippet } = args;
 
-        if (!title || !problem) {
+        if (!title) {
             throw new BadRequestError('参数缺失：关卡名称和问题描述不可为空！');
         }
 
@@ -883,15 +877,19 @@ class StagesManageHandler extends Handler {
                 } = stageData;
 
                 // ===== 必填字段校验 =====
-                if (!title) throw new Error(`第 ${index} 条缺少 title`);
+                if (type === undefined) throw new Error(`第 ${index} 条缺少 type`);
+                if (title === undefined) throw new Error(`第 ${index} 条缺少 title`);
                 if (answer === undefined) throw new Error(`第 ${index} 条缺少 answer`);
+                if (analysis === undefined) throw new Error(`第 ${index} 条缺少 analysis`);
+                let finalKeyword = [];
+                if (keywords) finalKeyword = keywords.split(',').map((k: string) => k.trim()).filter(Boolean);
 
                 const doc = {
                     title: String(title),
                     problem: String(problem),
                     answer: String(answer),
 
-                    type: toNumber(type, 1),
+                    type: toNumber(type),
                     status: 1,
                     privilege: toNumber(privilege, 1),
                     duration: toNumber(duration, 60),
@@ -902,11 +900,11 @@ class StagesManageHandler extends Handler {
                     codeSnippet: codeSnippet ? String(codeSnippet) : '',
 
                     hints: normalizeHints(hints),
-                    keywords: toArray(keywords).map(String),
+                    keywords: finalKeyword,
 
                     author: author ? Number(author) : this.user._id,
 
-                    createdAt: toDate(createdAt),
+                    createdAt: new Date(),
 
                     ac: 0,
                     tried: 0
