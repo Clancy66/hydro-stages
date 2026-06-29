@@ -1,6 +1,6 @@
 import { Handler, ObjectId, PRIV, ForbiddenError, BadRequestError, NotFoundError, param, Types, db, moment } from 'hydrooj';
 import { StagesModel, StagesChallengeModel } from './models';
-import { promises as fs } from 'fs';
+import fs from 'fs/promises';
 
 // 依赖于金币插件
 import { CoinsModel, BillsModel } from 'coin/model';
