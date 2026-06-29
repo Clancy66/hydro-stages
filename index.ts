@@ -1,9 +1,6 @@
 import { Handler, ObjectId, PRIV, ForbiddenError, BadRequestError, NotFoundError, param, Types, db, moment, fs } from 'hydrooj';
 import { StagesModel, StagesChallengeModel } from './models';
 
-// 依赖于金币插件
-import { CoinsModel, BillsModel } from 'coin/model';
-
 // 5 大竞赛关卡局部子模板映射注册中心
 const TYPE_MAP: Record<number, string> = {
     0: 'partials/blackbox.html',     // 🔎 黑盒破译
@@ -12,15 +9,6 @@ const TYPE_MAP: Record<number, string> = {
     3: 'partials/memory.html',       // 💾 内存劫变
     4: 'partials/complexity.html'    // ⏱️ 时空刺客
 };
-
-function toDate(v: any) {
-    const d = new Date(v);
-    return isNaN(d.getTime()) ? new Date() : d;
-}
-
-function toArray(v: any) {
-    return Array.isArray(v) ? v : [];
-}
 
 function toNumber(v: any, def = 0) {
     const n = Number(v);
@@ -322,8 +310,20 @@ class StagesHandler extends Handler {
 
                 // 依赖于金币插件
                 const currentLog = "[购买天梯赛入场券] " + activeRound.name;
-                await BillsModel.add(this.user._id, this.user._id, "", activeRound.ticket, currentLog, 2);
-                await CoinsModel.inc(this.user._id, { total: -activeRound.ticket });
+                await db.collection('bills').insertOne({
+                    createAt: new Date(),
+                    rootId: this.user._id,
+                    uid: this.user._id,
+                    goodsId: "",
+                    coins: -activeRound.ticket,
+                    content: currentLog,
+                    check: 2
+                });
+                await db.collection('coins').findOneAndUpdate(
+                    { uid: this.user._id },
+                    { $inc: { total: -activeRound.ticket } },
+                    { upsert: true }
+                );
             }
             await StagesChallengeModel.coll.insertOne({
                 uid: this.user._id,
@@ -405,8 +405,20 @@ class StagesHandler extends Handler {
 
             // 更新金币账单，依赖金币插件
             const billLog = "[竞技奖励] " + stage.title;
-            await BillsModel.add(this.user._id, this.user._id, "", finalReward, billLog, 2);
-            await CoinsModel.inc(this.user._id, { total: finalReward, stages: finalReward });
+            await db.collection('bills').insertOne({
+                createAt: new Date(),
+                rootId: this.user._id,
+                uid: this.user._id,
+                goodsId: "",
+                coins: -finalReward,
+                content: billLog,
+                check: 2
+            });
+            await db.collection('coins').findOneAndUpdate(
+                { uid: this.user._id },
+                { $inc: { total: finalReward, stages: finalReward } },
+                { upsert: true }
+            );
 
             // 🎉 成功通关 (status: 1)
             await StagesChallengeModel.updateProgress(challenge._id, {
