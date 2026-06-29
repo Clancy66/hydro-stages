@@ -892,8 +892,6 @@ class StagesManageHandler extends Handler {
                 if (title === undefined) throw new Error(`第 ${index} 条缺少 title`);
                 if (answer === undefined) throw new Error(`第 ${index} 条缺少 answer`);
                 if (analysis === undefined) throw new Error(`第 ${index} 条缺少 analysis`);
-                let finalKeyword = [];
-                if (keywords) finalKeyword = keywords.split(',').map((k: string) => k.trim()).filter(Boolean);
 
                 const doc = {
                     title: String(title),
@@ -911,7 +909,7 @@ class StagesManageHandler extends Handler {
                     codeSnippet: codeSnippet ? String(codeSnippet) : '',
 
                     hints: normalizeHints(hints),
-                    keywords: finalKeyword,
+                    keywords: keywords,
 
                     author: author ? Number(author) : this.user._id,
 
