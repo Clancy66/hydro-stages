@@ -460,7 +460,7 @@ class StagesHandler extends Handler {
     // 管理员下架关卡接口
     @param('stageId', Types.ObjectId)
     async postDisableStage(args: any, stageId: ObjectId) {
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('高级管理权限拒绝');
         }
         if (!stageId) throw new BadRequestError('参数缺失');
@@ -488,7 +488,7 @@ class StagesManageHandler extends Handler {
     static methods = ['GET', 'POST'];
 
     async get() {
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('权限不足：只有系统级或域管理员可访问天梯轮次管理！');
         }
 
@@ -544,14 +544,14 @@ class StagesManageHandler extends Handler {
     }
 
     async post(args: any) {
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('发布指令遭拒：您非本域高级管理人员！');
         }
     }
 
     // 创建天梯赛
     async postCreateRound(args: any) {
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('发布指令遭拒：您非本域高级管理人员！');
         }
 
@@ -613,7 +613,7 @@ class StagesManageHandler extends Handler {
 
     // 删除天梯赛
     async postDeleteRound(args: any) {
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('发布指令遭拒：您非本域高级管理人员！');
         }
 
@@ -637,7 +637,7 @@ class StagesManageHandler extends Handler {
 
     // 创建关卡
     async postCreateStage(args: any) {
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('发布指令遭拒：您非本域高级管理人员！');
         }
 
@@ -717,7 +717,7 @@ class StagesManageHandler extends Handler {
     // 禁用关卡
     async postDisableStage(args: any) {
         const { stageId } = args;
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('高级管理权限拒绝');
         }
         if (!stageId) throw new BadRequestError('参数缺失');
@@ -738,7 +738,7 @@ class StagesManageHandler extends Handler {
     // 隐藏关卡
     async postHiddenStage(args: any) {
         const { stageId } = args;
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('高级管理权限拒绝');
         }
         if (!stageId) throw new BadRequestError('参数缺失');
@@ -758,7 +758,7 @@ class StagesManageHandler extends Handler {
     // 公开关卡
     async postPublicStage(args: any) {
         const { stageId } = args;
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('高级管理权限拒绝');
         }
         if (!stageId) throw new BadRequestError('参数缺失');
@@ -776,7 +776,7 @@ class StagesManageHandler extends Handler {
     // 删除关卡（仅在禁用列表可用）
     async postDeleteStage(args: any) {
         const { stageId } = args;
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('高级管理权限拒绝');
         }
         if (!stageId) throw new BadRequestError('参数缺失');
@@ -797,7 +797,7 @@ class StagesManageHandler extends Handler {
 
     // 导出所有关卡数据
     async postExportStages() {
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('高级管理权限拒绝');
         }
 
@@ -822,7 +822,7 @@ class StagesManageHandler extends Handler {
 
     // 导入关卡数据
     async postImportStages() {
-        if (!this.user.hasPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN)) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
             throw new ForbiddenError('高级管理权限拒绝');
         }
 
