@@ -404,16 +404,6 @@ class StagesHandler extends Handler {
             const finalReward = Math.max(0, basicReward - hintCost);
 
             // 更新金币账单，依赖金币插件
-            const billLog = "[竞技奖励] " + stage.title;
-            await db.collection('bills').insertOne({
-                createAt: new Date(),
-                rootId: this.user._id,
-                uid: this.user._id,
-                goodsId: "",
-                coins: finalReward,
-                content: billLog,
-                check: 2
-            });
             await db.collection('coins').findOneAndUpdate(
                 { uid: this.user._id },
                 { $inc: { total: finalReward, stages: finalReward } },
