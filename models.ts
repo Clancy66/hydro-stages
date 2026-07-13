@@ -244,8 +244,8 @@ export class StagesModel {
 export class StagesChallengeModel {
     static coll = challengeCollection;
 
-    static async getOne(id: ObjectId): Promise<StagesChallengeDoc | null> {
-        return await challengeCollection.findOne({ _id: id });
+    static async getOne(filter: Filter<StagesChallengeDoc> = {}): Promise<StagesChallengeDoc | null> {
+        return await challengeCollection.findOne(filter);
     }
 
     static async getActiveOne(uid: number, stageId: ObjectId): Promise<StagesChallengeDoc | null> {

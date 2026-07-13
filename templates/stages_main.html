@@ -208,7 +208,7 @@
                                         <div style="text-align: center; margin-top: 1rem;">
                                             {% if ladderChallenge %}
                                                 {% if ladderChallenge.status == 0 %}
-                                                    <a href="/stages?stageId={{ ladderStage._id }}" class="btn-lobby-action" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color:#fff; display:inline-flex; width:100%; height:34px; border-radius:17px; text-decoration:none; font-weight:600;">⚔️ 您正在对局中，立刻重返战场</a>
+                                                    <a href="/stages?stageId={{ ladderStage._id }}" class="btn-lobby-action" style="justify-content: center; align-items: center;background: linear-gradient(135deg, #3b82f6, #1d4ed8); color:#fff; display:inline-flex; width:100%; height:34px; border-radius:17px; text-decoration:none; font-weight:600;">⚔️ 您正在对局中，立刻重返战场</a>
                                                 {% else %}
                                                     <a href="/stages?stageId={{ ladderStage._id }}" class="btn-lobby-action" style="justify-content: center; align-items: center;background: #e2e8f0; color:#475569; display:inline-flex; width:100%; height:34px; border-radius:17px; text-decoration:none; font-weight:600;">💡 您已完赛，点击进入现场深度复盘</a>
                                                     <div style="margin-top:0.5rem; font-size:0.8rem; color:{% if ladderChallenge.status == 1 %}#16a34a{% else %}#dc2626{% endif %}; font-weight:600;">

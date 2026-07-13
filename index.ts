@@ -194,14 +194,27 @@ class StagesHandler extends Handler {
             if (activeRound.startTime > timeNow) {
                 throw new ForbiddenError('本轮天梯赛暂未开始，请耐心等待！');
             }
-            if (this.user.rp < activeRound.limit) {
-                throw new ForbiddenError('天梯对抗赛属于高级对抗。你当前域内 RP 积分不足 ' + activeRound.limit + ' 积分，暂不满足准入门槛！');
+
+            // 第二轮检查挑战是否创建，避免重复检票
+            const challange = await StagesChallengeModel.getOne({uid: this.user._id, stageId: stageId});
+            if (!challange) {
+                // 第一轮检查门票
+                const ticket = await db.collection('bag').findOne({ uid: this.user._id, type: 8, used: false });
+                const rp_ticket = await db.collection('bag').findOne({ uid: this.user._id, type: 7, used: false });
+
+                if (this.user.rp < activeRound.limit) {
+                    if (!ticket && !rp_ticket)
+                        throw new ForbiddenError('天梯对抗赛属于高级对抗。你当前域内 RP 积分不足 ' + activeRound.limit + ' 积分，暂不满足准入门槛！');
+                }
+                
+                // 第一轮检查金币
+                const usercoin = await db.collection('coins').findOne({ uid: this.user._id });
+                if (usercoin.total < activeRound.ticket) {
+                    if (!ticket)
+                        throw new ForbiddenError('你的金币数量不足 ' + activeRound.ticket + '，无法解锁本轮天梯对抗赛！');
+                }    
             }
-            
-            if (this.user.coin < activeRound.ticket) {
-                throw new ForbiddenError('你的金币数量不足 ' + activeRound.ticket + '，无法解锁本轮天梯对抗赛！');
-            }
-            // 这里先不扣除门票
+            // 这里先不扣除门票和金币
         } else if (stage.status === 1) {
             throw new NotFoundError('该关卡已被禁用');
         }
@@ -243,7 +256,7 @@ class StagesHandler extends Handler {
                     $set: { status: 3, timeUsed: stage.duration, finalSelectedLine: "暂无" },
                     $push: { content: `[GET_TIMEOUT] 计时期满，后端执行超时判定落盘。` }
                 });
-                historyChallenge = await StagesChallengeModel.getOne(activeChallenge._id);
+                historyChallenge = await StagesChallengeModel.getOne({_id: activeChallenge._id});
                 activeChallenge = null;
             } else {
                 (activeChallenge as any).timeLeft = stage.duration - timeUsed;
@@ -305,25 +318,37 @@ class StagesHandler extends Handler {
         const hasActive = await StagesChallengeModel.getActiveOne(this.user._id, stageId);
         if (!hasActive) {
             if (stage.status === 2) {
-                // 正式扣除门票
-                const activeRound = await db.collection('stages_ladder_round').findOne({ isActive: true });
+                // 优先扣除虚拟门票
+                const ticket = await db.collection('bag').findOne({ uid: this.user._id, type: 8, used: false });
+                if (ticket) {
+                    await db.collection('bag').updateOne({ _id: ticket._id }, { $set: { used: true } });
+                }
+                else {
+                    const rp_ticket = await db.collection('bag').findOne({ uid: this.user._id, type: 7, used: false });
+                    if (rp_ticket) {
+                        await db.collection('bag').updateOne({ _id: rp_ticket._id }, { $set: { used: true } });
+                    }
 
-                // 依赖于金币插件
-                const currentLog = "[购买天梯赛入场券] " + activeRound.name;
-                await db.collection('bills').insertOne({
-                    createAt: new Date(),
-                    rootId: this.user._id,
-                    uid: this.user._id,
-                    goodsId: "",
-                    coins: -activeRound.ticket,
-                    content: currentLog,
-                    check: 2
-                });
-                await db.collection('coins').findOneAndUpdate(
-                    { uid: this.user._id },
-                    { $inc: { total: -activeRound.ticket } },
-                    { upsert: true }
-                );
+                    // 扣除金币
+                    const activeRound = await db.collection('stages_ladder_round').findOne({ isActive: true });
+
+                    // 依赖于金币插件
+                    const currentLog = "[购买天梯赛入场券] " + activeRound.name;
+                    await db.collection('bills').insertOne({
+                        createAt: new Date(),
+                        rootId: this.user._id,
+                        uid: this.user._id,
+                        goodsId: "",
+                        coins: -activeRound.ticket,
+                        content: currentLog,
+                        check: 2
+                    });
+                    await db.collection('coins').findOneAndUpdate(
+                        { uid: this.user._id },
+                        { $inc: { total: -activeRound.ticket } },
+                        { upsert: true }
+                    );     
+                }
             }
             await StagesChallengeModel.coll.insertOne({
                 uid: this.user._id,
