@@ -45,7 +45,7 @@ export interface StagesChallengeDoc {
     stageId: ObjectId;      // 对应的关卡 ID
     timeUsed: number;       // 通关用时（秒）
     chancesUsed: number;    // 通关已用次数
-    status: number;         // 结局状态：0:挑战进行中, 1:挑战成功, 2:次数耗尽失败, 3:超时失败
+    status: number;         // 结局状态：0:挑战进行中, 1:挑战成功, 2:次数耗尽失败, 3:超时失败, 4:人工申诉中
     
     // 🎭 挑战进行时多单页状态快照字段
     finalSelectedLine?: string; // 定格离盘时最终录入的答案快照（行号 / 物理地址 / 复杂度文本）
@@ -55,6 +55,7 @@ export interface StagesChallengeDoc {
     content: string[];      // 玩家的历史输入日志 / 答案提交历史列表
     startAt: Date;          // 游戏开始时间
     finalReward: number;    // 最终奖励
+    judgeByAdmin: boolean;  // 人工申诉
 }
 
 // 新增：天梯轮次数据模型
@@ -263,6 +264,16 @@ export class StagesChallengeModel {
     static async updateProgress(id: ObjectId, updateDoc: any): Promise<boolean> {
         const finalUpdate = updateDoc.$set || updateDoc.$push || updateDoc.$inc ? updateDoc : { $set: updateDoc };
         const result = await challengeCollection.updateOne({ _id: id }, finalUpdate);
+        return result.modifiedCount > 0;
+    }
+
+    static async updateStatus(id: ObjectId, status: number): Promise<boolean> {
+        const result = await challengeCollection.updateOne({ _id: id }, { $set: {status}});
+        return result.modifiedCount > 0;
+    }
+
+    static async updateJudge(id: ObjectId, judgeByAdmin: boolean): Promise<boolean> {
+        const result = await challengeCollection.updateOne({ _id: id }, { $set: {judgeByAdmin}});
         return result.modifiedCount > 0;
     }
 

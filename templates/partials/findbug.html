@@ -405,7 +405,7 @@ html[data-mantine-color-scheme="dark"] .code-line--interactive:hover {
                     {% set lines = stage.codeSnippet.split('\n') %}
                     {% for line in lines %}
                         <!-- 💡 丝滑的单页高亮交互点击行号 -->
-                        <div class="code-line {% if activeChallenge %}code-line--interactive{% endif %}" data-line="{{ loop.index }}" style="cursor: {% if activeChallenge %}pointer{% else %}default{% endif %};">
+                        <div class="code-line {% if activeChallenge %}code-line--interactive{% elif historyChallenge and loop.index == finalDisplayLine %}highlight-line{% endif %}" data-line="{{ loop.index }}" style="cursor: {% if activeChallenge %}pointer{% else %}default{% endif %};">
                             <span class="line-num" style="min-width: 30px; display: inline-block;">{{ loop.index }}</span>
                             <span class="code-text" style="white-space: pre; font-family: monospace;">{{ line }}</span>
                         </div>

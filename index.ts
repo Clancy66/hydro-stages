@@ -55,6 +55,7 @@ class StagesHandler extends Handler {
         // 路径 A：URL 未携带题目 ID -> 驱动并渲染【游戏大厅主页】
         if (!stageIdStr) {
             const currentType = this.request.query.type ? parseInt(this.request.query.type as string) : 0;
+            const checkChallenge = await StagesChallengeModel.getMany({status: 4});
             
             // 【天梯对抗赛专用逻辑分支】当点击第 6 个选项卡"天梯对抗 (type=5)"时
             if (currentType === 5) {
@@ -64,6 +65,7 @@ class StagesHandler extends Handler {
                 // ============================
                 // 1. 首先查找需要更新的轮次及其关卡ID
                 const expiredRounds = await db.collection('stages_ladder_round').find({
+                    isActive: true,
                     endTime: { $lt: timeNow }
                 }).toArray();
 
@@ -161,7 +163,7 @@ class StagesHandler extends Handler {
                     ...this.response.body,
                     currentType, ladderStage, ladderChallenge, ladderLeaderboard,
                     activeRound, // 将轮次信息也传递给前端，用于显示轮次名称等
-                    startTime, endTime,
+                    startTime, endTime, checkChallenge,
                     feedbackMsg: this.request.query.feedbackMsg || null
                 };
                 this.response.template = 'stages_main.html';
@@ -172,7 +174,7 @@ class StagesHandler extends Handler {
             // 🔧 修改：只获取 status 为 0 (公开) 的关卡
             const stageList = await StagesModel.getWithUserStatus(this.user._id, currentType, 0); // 传递 status: 0
 
-            this.response.body = { ...this.response.body, stageList, currentType, feedbackMsg: this.request.query.feedbackMsg || null };
+            this.response.body = { ...this.response.body, stageList, currentType, checkChallenge, feedbackMsg: this.request.query.feedbackMsg || null };
             this.response.template = 'stages_main.html';
             return;
         }
@@ -270,7 +272,7 @@ class StagesHandler extends Handler {
         let finalDisplayReward = 0;
 
         // 补齐历史完赛归档的对比状态数组 [1, 2, 3]，彻底驱散 Expression expected 编译盲区
-        if (historyChallenge && [1, 2, 3].indexOf(historyChallenge.status) !== -1) {
+        if (historyChallenge && [1, 2, 3, 4].indexOf(historyChallenge.status) !== -1) {
             activeChallenge = null; 
             finalDisplayLine = historyChallenge.finalSelectedLine || "暂无";
 
@@ -286,10 +288,11 @@ class StagesHandler extends Handler {
             } else {
                 finalDisplayReward = 0;
             }
-        } else if (!activeChallenge) {
+        } else if (activeChallenge) {  // 活跃赛事删除解析
             delete (clientStage as any).analysis;
         }
 
+        // 任意赛事删除答案
         delete (clientStage as any).answer;
         const feedbackMsg = this.request.query.feedbackMsg || null;
 
@@ -360,7 +363,8 @@ class StagesHandler extends Handler {
                 hintCostTotal: 0,        
                 content: [],
                 startAt: new Date(),
-                finalReward: 0
+                finalReward: 0,
+                judgeByAdmin: false
             });
             await StagesModel.incCounter(stageId, 'tried');
         }
@@ -491,6 +495,21 @@ class StagesHandler extends Handler {
 
         // 重定向回原类型页面
         this.response.redirect = `/stages?type=${stage.type}`;
+    }
+
+    // 黑盒破译人工申诉
+    @param('challengeId', Types.ObjectId)
+    async postJudgeByAdmin(args: any, challengeId: ObjectId) {
+        const challenge = await StagesChallengeModel.getOne({_id: new ObjectId(challengeId)});
+        if (!challenge) throw new NotFoundError('该记录不存在');
+
+        if (challenge.judgeByAdmin) throw new Error('人工审核已判定最终结果，无需再次申诉');
+
+        if (challenge.status == 4) throw new Error('人工审核进行中，请耐心等待');
+
+        await StagesChallengeModel.updateStatus(challenge._id, 4);
+        const Msg = `人工申诉已提交，请耐心等待！`;
+        this.response.redirect = `/stages?stageId=${challenge.stageId.toHexString()}&feedbackMsg=⚠️ ${Msg}`;
     }
 }
 
@@ -953,6 +972,116 @@ class StagesManageHandler extends Handler {
     }
 }
 
+/**
+ * ========================================================
+ * 3. 人工审核通道
+ * ========================================================
+ */
+class StagesJudgeHandler extends Handler {
+    static methods = ['GET', 'POST'];
+
+    async get() {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
+            throw new ForbiddenError('权限不足：只有系统级或域管理员可访问天梯轮次管理！');
+        }
+
+        const check = this.request.query.check;
+
+        // 获取待审核挑战，仅限黑盒破译关卡
+        const judging = await db.collection('stages_challenge').aggregate([
+        { 
+            $match: { 
+                status: 4
+            } 
+        },
+        { 
+            $sort: { startAt: -1 } 
+        },
+        { 
+            $lookup: {
+            from: 'stages',
+            localField: 'stageId',
+            foreignField: '_id',
+            as: 'stageInfo'
+            }
+        },
+        { 
+            $project: {
+                content: 1,
+                stageInfo: { $arrayElemAt: ["$stageInfo", 0] } 
+            }
+        }
+        ]).toArray();
+
+        // 获取已审核挑战
+        const judged = await db.collection('stages_challenge').aggregate([
+        { 
+            $match: { 
+                judgeByAdmin: true
+            } 
+        },
+        { 
+            $sort: { startAt: -1 } 
+        },
+        { 
+            $lookup: {
+            from: 'stages',
+            localField: 'stageId',
+            foreignField: '_id',
+            as: 'stageInfo'
+            }
+        },
+        { 
+            $project: {
+                content: 1,
+                stageInfo: { $arrayElemAt: ["$stageInfo", 0] } 
+            }
+        }
+        ]).toArray();
+
+        this.response.body = {
+            ...this.response.body,
+            judging, judged, check
+        };
+        this.response.template = 'judge.html';
+    }
+
+    async post(args: any) {
+        if (!this.user.hasPriv(PRIV.PRIV_SET_PERM)) {
+            throw new ForbiddenError('发布指令遭拒：您非本域高级管理人员！');
+        }
+    }
+
+    // 审核
+    async postJudge(args: any) {
+        const { challengeId, status, content, coins } = args;
+
+        if (!challengeId || !status || !content) {
+            throw new BadRequestError('参数缺失：请填写所有必填项！');
+        }
+
+        const challenge = await StagesChallengeModel.getOne({_id: new ObjectId(challengeId)});
+        const stats = Number(status);
+        const coin = Number(coins);
+        const currentLog = `人工审核结果: [${content}, 返还金币 ${coin}]`;
+
+        // 更新挑战记录
+        await StagesChallengeModel.updateProgress(challenge._id, {
+            $set: { status: stats, judgeByAdmin: true },
+            $inc: { finalReward: coin },
+            $push: { content: `${currentLog}` }
+        });
+
+        // 更新金币记录
+        await db.collection('coins').findOneAndUpdate(
+            { uid: challenge.uid },
+            { $inc: { total: coin, stages: coin } }
+        )
+
+        this.response.redirect = `/judge?feedbackMsg=人工审核结果已入库！`;
+    }
+}
+
 
 /**
  * ========================================================
@@ -961,6 +1090,7 @@ class StagesManageHandler extends Handler {
  */
 export function apply(ctx: any) {
     ctx.Route('stages_main_route', '/stages', StagesHandler);
+    ctx.Route('stages_judge_route', '/judge', StagesJudgeHandler);
     ctx.Route('stages_manager_route', '/stages/manage', StagesManageHandler);
 
     ctx.injectUI('UserDropdown', 'stages_main_route', { icon: 'web', displayName: '编程竞技' }, PRIV.PRIV_USER_PROFILE);

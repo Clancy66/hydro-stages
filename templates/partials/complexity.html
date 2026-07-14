@@ -591,7 +591,7 @@ html[data-mantine-color-scheme="dark"] .jigsaw-desc-zone {
                     <!-- 🆕 核心新增：复杂度多选轮盘（抢答按钮组区域） -->
                     <div id="complexity-wheel" class="complexity-wheel-grid">
                         {% for hint in stage.hints %}
-                        <button class="btn-complexity-option typo richmedia" data-ans="{{hint.id}}">{{hint.text}}</button>
+                        <button class="btn-complexity-option typo richmedia  {% if historyChallenge and historyChallenge.finalSelectedLine == hint.id %}is-active{% endif %}" data-ans="{{hint.id}}">{{hint.text}}</button>
                         {% endfor %}
                     </div>
                 </div>

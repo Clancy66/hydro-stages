@@ -1,0 +1,275 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<!-- 💡 编程竞技大厅顶级容器 -->
+<div class="row stages-lobby-container">
+    <div class="medium-12 columns">
+        <div class="section lobby-main-panel" style="border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+            
+            <!-- 标题栏大区与管理员便捷创建快捷药丸按钮 -->
+            <div class="lobby-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h1 class="section__title lobby-main-title" style="font-size: 1.6rem !important; font-weight: 700 !important; display: inline-flex; align-items: center; gap: 8px;">
+                    ⚠️ 人工审核
+                </h1>
+                
+                <!-- 依赖于 coin 插件 -->
+                <div>
+                <a href="/shop" class="btn-lobby-action" style="background: linear-gradient(135deg, #ff9900, #ff5500); color:#fff; text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 1.25rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important; line-height: 1 !important; text-align: center !important; box-sizing: border-box !important; transition: all 0.2s ease !important;">
+                    🛒 神秘商店
+                </a>
+                <a href="/stages" class="btn-lobby-action" style="background: linear-gradient(135deg, #00d5ff, #00aaff); color:#fff; text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 1.25rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important; line-height: 1 !important; text-align: center !important; box-sizing: border-box !important; transition: all 0.2s ease !important;">
+                    🎮 竞技大厅
+                </a>
+                <!-- 👑 管理员专属提权绿色胶囊按钮（对应后端 postUpdate 出题接收管道） -->
+                {% if handler.user.hasPriv(PRIV.PRIV_SET_PERM) %}
+                <a href="/stages/manage" class="btn-lobby-action" style="background: linear-gradient(135deg, #10b981, #059669) !important; color: #ffffff !important; text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 1.25rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important; line-height: 1 !important; text-align: center !important; box-sizing: border-box !important; transition: all 0.2s ease !important;">
+                    ➕ 创建竞技任务
+                </a>
+                {% endif %}
+                </div>
+            </div>
+
+            <!-- 🎛️ 1. 顶层六大游戏卡片选项卡控制台（100% 物理克隆您的设计稿比例与卡片阴影） -->
+            <div class="stage-tab-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-bottom: 2rem;">
+                <a href="/judge?check=0" class="tab-item-box {% if check == 0 %}tab-item-box--active{% endif %}">待审核：{{ judging.length }}</a>
+                <a href="/judge?check=1" class="tab-item-box {% if check == 1 %}tab-item-box--active{% endif %}">已审核：{{ judged.length }}</a>
+            </div>
+
+            <!-- 📋 2. 核心子卡片下挂展示区主面板外壳 -->
+            <div class="sub-tasks-panel" style="border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                <!-- 动态捕获由后端重定向抛回的金币/门槛不足的动态警告提示框 -->
+                {% if feedbackMsg %}
+                <div class="control-feedback-box" style="display: block; margin-top: 5px; margin-bottom: 15px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; color: #856404; border-radius: 6px; font-size: 0.9rem;">
+                    ⚠️ {{ feedbackMsg }}
+                </div>
+                {% endif %}
+                
+                <!-- 普通 0-4 种基础游戏类型的普通卡片展示分支 -->
+                {% if check == 0 %}
+                    {% if judging and judging|length > 0 %}
+                        <div class="tasks-matrix-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; width: 100%;">
+                            {% for sdoc in judging %}
+                                <div class="task-card-item" style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.02)';">
+                                    
+                                    <!-- 卡片上半部分：基础配置参数与计数快照 -->
+                                    <div class="task-card-upper">
+                                        <h4 style="font-size: 1.05rem; font-weight: 600; margin: 0 0 0.5rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 3rem;" title="{{ p.title }}">
+                                            {{ loop.index }}. {{ sdoc.stageInfo.title }}
+                                        </h4>
+                                        
+                                        <div class="task-meta-row" style="font-size: 1.0rem; margin-bottom: 0.75rem; margin-top: 0.75rem;">
+                                            关键字: {{ sdoc.stageInfo.keywords }}
+                                        </div>
+                                        操作流: 
+                                        {% for idx in sdoc.content %} 
+                                        <div class="task-meta-row" style="font-size: 0.9rem; line-height: 1.1rem; color: #64748b; margin-top: 0.75rem;">
+                                            <p>{{ loop.index }}. {{ idx }}</p>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <!-- 卡片下半部分：进入竞技全圆角药丸按钮与 AC 小勾徽章高亮自动化 -->
+                                    <div class="task-card-lower" style="width: 100%; margin-top: 1.25rem;">
+                                        <form method="post">
+                                        <div class="status-radio-flex-row" style="margin-bottom: 0.75rem; display: flex; gap: 1.5rem; flex-wrap: wrap; width: 100%;">
+                                            <label style="flex: 1; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.5rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                                <input type="radio" name="status" value="1" style="margin: 0;">
+                                                <div>
+                                                    <b style="color: #16a34a; font-size: 0.9rem; display: block;">成功</b>
+                                                </div>
+                                            </label>
+                                            <label style="flex: 1; background: #ede6ff; border: 1px solid #dac3f5; border-radius: 8px; padding: 0.5rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                                <input type="radio" name="status" value="2" style="margin: 0;">
+                                                <div>
+                                                    <b style="color: #9253f6; font-size: 0.9rem; display: block;">超次</b>
+                                                </div>
+                                            </label>
+                                            <label style="flex: 1; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 8px; padding: 0.5rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                                <input type="radio" name="status" value="3" style="margin: 0;">
+                                                <div>
+                                                    <b style="color: #2563eb; font-size: 0.9rem; display: block;">超时</b>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <input type="hidden" name="operation" value="judge"> <!-- ✅ 添加操作标识 -->
+                                        <input type="hidden" name="_csrf" value="{{ _csrf }}">
+                                        <input type="hidden" name="challengeId" value="{{ sdoc._id }}">
+                                        <div class="input-wrapper">
+                                            <input type="text" name="content" id="algorithm-guess-input" required class="smart-placeholder" placeholder="审核意见" autocomplete="off">
+                                            <input type="number" name="coins" id="algorithm-guess-input" required class="smart-placeholder" placeholder="返还金币" autocomplete="off">
+                                        </div>
+                                        <button type="submit" id="btn-submit-jigsaw" class="btn-lock-puzzle">提交</button>
+                                        </form>
+                                    </div>
+
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-lobby-box" style="border-radius: 10px; padding: 4rem 1rem; text-align: center; border: 1px solid #e2e8f0; color: #94a3b8; box-shadow: 0 2px 12px rgba(0,0,0,0.01);">
+                            <span style="font-size: 3rem; display: block; margin-bottom: 0.75rem;">📁</span>
+                            <div style="font-size: 1.05rem; font-weight: 600; color: #64748b; margin-bottom: 0.25rem;">暂无待审核挑战记录</div>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    {% if judged and judged|length > 0 %}
+                        <div class="tasks-matrix-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; width: 100%;">
+                            {% for sdoc in judged %}
+                                <div class="task-card-item" style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.02)';">
+                                    
+                                    <!-- 卡片上半部分：基础配置参数与计数快照 -->
+                                    <div class="task-card-upper">
+                                        <h4 style="font-size: 1.05rem; font-weight: 600; margin: 0 0 0.5rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 3rem;" title="{{ p.title }}">
+                                            {{ loop.index }}. {{ sdoc.stageInfo.title }}
+                                        </h4>
+                                        
+                                        <div class="task-meta-row" style="font-size: 1.0rem; margin-bottom: 0.75rem; margin-top: 0.75rem;">
+                                            关键字: {{ sdoc.stageInfo.keywords }}
+                                        </div>
+                                        操作流: 
+                                        {% for idx in sdoc.content %} 
+                                        <div class="task-meta-row" style="font-size: 0.9rem; line-height: 1.1rem; color: #64748b; margin-top: 0.75rem;">
+                                            <p>{{ loop.index }}. {{ idx }}</p>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-lobby-box" style="border-radius: 10px; padding: 4rem 1rem; text-align: center; border: 1px solid #e2e8f0; color: #94a3b8; box-shadow: 0 2px 12px rgba(0,0,0,0.01);">
+                            <span style="font-size: 3rem; display: block; margin-bottom: 0.75rem;">📁</span>
+                            <div style="font-size: 1.05rem; font-weight: 600; color: #64748b; margin-bottom: 0.25rem;">暂无待审核挑战记录</div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- 🎨 100% 克隆您截图质感的大厅卡片专用内联 CSS -->
+<style>
+    /* 1. 选项卡格子质感优化（严格对齐设计稿比例） */
+    .tab-item-box {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        padding: 1rem 0.5rem !important;
+        text-align: center !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 52px !important; 
+        font-size: 1.05rem !important;
+        line-height: 1 !important;
+        box-sizing: border-box !important;
+    }
+    
+    .tab-item-box:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 20px rgba(0, 84, 255, 0.08) !important;
+        color: #0084ff !important;
+        border-color: #0084ff !important;
+    }
+    
+    /* 2. 激活态极致渐变美化流（对齐高层高亮质感） */
+    .tab-item-box--active {
+        background: linear-gradient(135deg, #00c6ff, #0072ff) !important;
+        color: #ffffff !important;
+        border-color: transparent !important;
+        box-shadow: 0 6px 16px rgba(0, 114, 255, 0.35) !important;
+    }
+    
+    .tab-item-box--active:hover {
+        color: #ffffff !important;
+        border-color: transparent !important;
+    }
+
+    html[data-mantine-color-scheme="dark"] .ladder-info-column {
+        background-color: #4b4b4b;
+    }
+    
+    html[data-mantine-color-scheme="dark"] .ladder-leaderboard-column  {
+        background-color: #4b4b4b;
+    }
+
+    html[data-mantine-color-scheme="dark"] .task-card-item {
+        background-color: #4b4b4b;
+    }
+
+    html[data-mantine-color-scheme="dark"] .stat-grid {
+        opacity: 0.70;
+    }
+
+    .input-wrapper input.smart-placeholder {
+        width: 100%;
+        padding: 0.65rem 0.85rem;
+        border: 1px solid var(--color-border, #e2e8f0);
+        background-color: var(--color-bg-panel);
+        color: var(--color-text, #1e293b);
+        border-radius: 6px;
+        font-size: 0.9rem;
+        outline: none;
+        box-sizing: border-box;
+        text-align: center;
+        transition: all 0.2s ease;
+        margin-bottom: 16px;
+    }
+
+    /* 2. 💥 终极补丁：结合系统暗色属性 + 特异性选择器，强制覆盖所有的系统硬编码深色字 */
+    html[data-mantine-color-scheme="dark"] .input-wrapper input[type="text"].smart-placeholder,
+    html[data-mantine-color-scheme="dark"] .smart-placeholder {
+        color: #ffffff !important;
+        background-color: var(--color-bg-block, rgba(255, 255, 255, 0.04)) !important;
+        border-color: var(--color-border, #373a40) !important;
+    }
+
+    /* 3. 当鼠标聚焦且闪烁光标时，利用 CSS 伪类让占位提示字瞬间隐形 */
+    .input-wrapper input.smart-placeholder:focus::placeholder {
+        color: transparent !important;
+        transition: color 0.15s ease;
+    }
+
+    /* 4. 🚀 按钮矮化 + 50% 圆角药丸极致美化 */
+.btn-lock-puzzle, .btn-back-lobby-native {
+    border: none !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.2s ease !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 极致精调：调矮高度、拉满全圆角药丸状 */
+    height: 34px !important; 
+    padding: 0 1.5rem !important;
+    border-radius: 17px !important; /* 高度的一半，达成完美的 50% 药丸弧度 */
+    font-size: 0.9rem !important;
+}
+
+/* 锁定提交按钮 */
+.btn-lock-puzzle {
+    background: #f5f5f5 !important;
+    color: #333333 !important;
+    border: 1px solid #e0e0e0 !important;
+    width: 100%;
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('feedbackMsg');
+
+    const newUrl =
+        window.location.pathname +
+        (params.toString() ? `?${params.toString()}` : '');
+
+    window.history.replaceState({}, '', newUrl);
+});
+</script>
+{% endblock %}

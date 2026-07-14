@@ -17,6 +17,9 @@
                 <a href="/shop" class="btn-lobby-action" style="background: linear-gradient(135deg, #ff9900, #ff5500); color:#fff; text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 1.25rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important; line-height: 1 !important; text-align: center !important; box-sizing: border-box !important; transition: all 0.2s ease !important;">
                     🛒 神秘商店
                 </a>
+                <a href="/judge?check=0" class="btn-lobby-action" style="background: linear-gradient(135deg, #00d5ff, #00aaff); color:#fff; text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 1.25rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important; line-height: 1 !important; text-align: center !important; box-sizing: border-box !important; transition: all 0.2s ease !important;">
+                    ⚠️ 人工审核：{{ checkChallenge.length }}
+                </a>
                 <!-- 👑 管理员专属提权绿色胶囊按钮（对应后端 postUpdate 出题接收管道） -->
                 {% if handler.user.hasPriv(PRIV.PRIV_SET_PERM) %}
                 <a href="/stages/manage" class="btn-lobby-action" style="background: linear-gradient(135deg, #10b981, #059669) !important; color: #ffffff !important; text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 1.25rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important; line-height: 1 !important; text-align: center !important; box-sizing: border-box !important; transition: all 0.2s ease !important;">
@@ -93,9 +96,10 @@
                                             {% if p.challengeSnapshot %}
                                                 {% set STATUS_LABELS = [
                                                     {"bg": "#e8f0fe", "color": "#1a73e8", "border": "#d2e3fc", "text": "⚔️ 排查中"},
-                                                    {"bg": "#e6f4ea", "color": "#137333", "border": "#ceead6", "text": "✔ 已通关"},
+                                                    {"bg": "#e6f4ea", "color": "#137333", "border": "#ceead6", "text": "🎉 已通关"},
                                                     {"bg": "#fce8e6", "color": "#c5221f", "border": "#fad2cf", "text": "❌ 次数用尽"},
-                                                    {"bg": "#fef7e0", "color": "#b06000", "border": "#feebb3", "text": "⏳ 挑战超时"}
+                                                    {"bg": "#fef7e0", "color": "#b06000", "border": "#feebb3", "text": "⏰ 挑战超时"},
+                                                    {"bg": "#fddec1", "color": "#f7994d", "border": "#fcdbaf", "text": "⚠️ 人工审核中"}
                                                 ] %}
                                                 {% set statusIdx = p.challengeSnapshot.status or 0 %}
                                                 {% set status = STATUS_LABELS[statusIdx] or STATUS_LABELS[0] %}

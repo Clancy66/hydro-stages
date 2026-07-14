@@ -429,11 +429,24 @@ html[data-mantine-color-scheme="dark"] .jigsaw-desc-zone {
                         {# 根据当前状态进行差异化渲染 #}
                         {% if inPuzzleZone %}
                             {% set puzzleIndex = puzzleIndex + 1 %}
-                            <!-- 🎯 可拖拽代码行：绑死其原始初始相对顺序 data-origin-order -->
-                            <div class="puzzle-item" draggable="true" data-origin-order="{{ puzzleIndex }}">
-                                <span class="drag-handle" style="color: #a1a1aa; cursor: grab;">⸪⸪</span>
-                                <code class="code-text" style="white-space: pre; font-family: monospace;">{{ line }}</code>
-                            </div>
+                            {% if activeChallenge %}
+                                <!-- 🎯 可拖拽代码行：绑死其原始初始相对顺序 data-origin-order -->
+                                <div class="puzzle-item" draggable="true" data-origin-order="{{ puzzleIndex }}">
+                                    <span class="drag-handle" style="color: #a1a1aa; cursor: grab;">⸪⸪</span>
+                                    <code class="code-text" style="white-space: pre; font-family: monospace;">{{ line }}</code>
+                                </div>
+                            {% elif historyChallenge and historyChallenge.finalSelectedLine != "暂无" %}
+                                {% set ans = historyChallenge.finalSelectedLine.split(',') %}
+                                <div class="code-line" style="opacity: 0.6;">
+                                    <span class="line-num" style="width: 33px; display: inline-block;">{{ globalIndex }}</span>
+                                    <span class="code-text" style="white-space: pre; font-family: monospace;">{{ lines[globalIndex - puzzleIndex + (+ans[puzzleIndex-1])] }}</span>
+                                </div>
+                            {% else %}
+                                <div class="code-line" style="opacity: 0.6;">
+                                    <span class="line-num" style="width: 33px; display: inline-block;">{{ globalIndex }}</span>
+                                    <span class="code-text" style="white-space: pre; font-family: monospace;">{{ line }}</span>
+                                </div>
+                            {% endif %}
                         {% else %}
                             <!-- 🔒 固定的外部只读行，保持全局原样递增的行号 -->
                             <div class="code-line" style="opacity: 0.6;">

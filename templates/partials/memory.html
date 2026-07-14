@@ -456,7 +456,10 @@ html[data-mantine-color-scheme="dark"] .jigsaw-desc-zone {
                     {% set globalIndex = 0 %}
                     {% for hint in stage.hints %}
                         {% set globalIndex = globalIndex + 1 %}
-                        <div class="ram-block" data-addr="{{hint.text}}"><span class="ram-label">{{ hint.text }}</span><div class="ram-status">{{ hint.status }}</div></div>
+                        <div class="ram-block {% if historyChallenge and finalDisplayLine == hint.text %}is-selected{% endif %}" data-addr="{{hint.text}}">
+                            <span class="ram-label">{{ hint.text }}</span>
+                            <div class="ram-status">{{ hint.status }}</div>
+                        </div>
                     {% endfor %}
                 </div>
             </div>
