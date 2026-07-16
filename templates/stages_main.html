@@ -17,11 +17,11 @@
                 <a href="/shop" class="btn-lobby-action" style="background: linear-gradient(135deg, #ff9900, #ff5500); color:#fff; text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 1.25rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important; line-height: 1 !important; text-align: center !important; box-sizing: border-box !important; transition: all 0.2s ease !important;">
                     🛒 神秘商店
                 </a>
+                <!-- 👑 管理员专属提权绿色胶囊按钮（对应后端 postUpdate 出题接收管道） -->
+                {% if handler.user.hasPriv(PRIV.PRIV_SET_PERM) %}
                 <a href="/judge?check=0" class="btn-lobby-action" style="background: linear-gradient(135deg, #00d5ff, #00aaff); color:#fff; text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 1.25rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important; line-height: 1 !important; text-align: center !important; box-sizing: border-box !important; transition: all 0.2s ease !important;">
                     ⚠️ 人工审核：{{ checkChallenge.length }}
                 </a>
-                <!-- 👑 管理员专属提权绿色胶囊按钮（对应后端 postUpdate 出题接收管道） -->
-                {% if handler.user.hasPriv(PRIV.PRIV_SET_PERM) %}
                 <a href="/stages/manage" class="btn-lobby-action" style="background: linear-gradient(135deg, #10b981, #059669) !important; color: #ffffff !important; text-decoration: none !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 34px !important; padding: 0 1.25rem !important; border-radius: 17px !important; font-weight: 600 !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important; line-height: 1 !important; text-align: center !important; box-sizing: border-box !important; transition: all 0.2s ease !important;">
                     ➕ 创建竞技任务
                 </a>
