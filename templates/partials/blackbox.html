@@ -511,9 +511,9 @@ html[data-mantine-color-scheme="dark"] .jigsaw-desc-zone {
             {% if historyChallenge %}
                 <div id="complexity-analysis-panel" class="complexity-analysis-zone">
                     <div id="jigsaw-description" class="jigsaw-desc-zone typo richmedia topic__content" data-emoji-enabled>
-                        你的操作流：
+                        操作流：
                         {% for idx in historyChallenge.content %}
-                            <div>{{ idx }}</div>
+                            <div>{{ loop.index }}. {{ idx }}</div>
                         {% endfor %}
                     </div>
                     <h3 class="analysis-panel-title" style="color: #e67e22;">💡 答案解析</h3>
