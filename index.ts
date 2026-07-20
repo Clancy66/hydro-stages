@@ -61,36 +61,71 @@ class StagesHandler extends Handler {
             if (currentType === 5) {
                 const timeNow = new Date();
                 // ============================
-                // 处理过期轮次，公开关联关卡，这个应该挂在钩子上，我懒
+                // 处理过期轮次，公开关联关卡
                 // ============================
-                // 1. 首先查找需要更新的轮次及其关卡ID
+                // 1. 查找需要更新的轮次（注意：带上我们需要用到的 stageId 和 name 字段）
                 const expiredRounds = await db.collection('stages_ladder_round').find({
                     isActive: true,
                     endTime: { $lt: timeNow }
-                }).toArray();
+                }, { projection: { _id: 1, stageId: 1, name: 1 } }).toArray();
 
-                // 2. 提取关卡ID数组
-                const stageIds = expiredRounds.map(round => round.stageId);
+                if (expiredRounds.length > 0) {
+                    // 2. 提取轮次自身的 ID 和 关卡 ID 数组
+                    const expiredRoundIds = expiredRounds.map(round => round._id);
+                    const stageIds = expiredRounds.map(round => round.stageId);
 
-                // 3. 更新轮次表
-                if (stageIds.length > 0) {
-                    await db.collection('stages_ladder_round').updateMany(
-                        { 
-                            isActive: true,
-                            endTime: { $lt: timeNow }
-                        },
-                        { 
-                            $set: { isActive: false } 
+                    // 3. 遍历过期的轮次发奖励
+                    for (const round of expiredRounds) {
+                        // 根据 stageId 查出前三名
+                        const topChallenges = await db.collection('stages_challenge').find({
+                            stageId: round.stageId,
+                        }).sort({ timeUsed: 1, chancesUsed: 1 }).limit(3).toArray();
+
+                        const rewards = [50, 30, 20];
+
+                        for (let i = 0; i < topChallenges.length; i++) {
+                            const challenge = topChallenges[i];
+                            const reward = rewards[i];
+
+                            if (challenge && challenge.uid) {
+                                // 更新金币
+                                await db.collection('coins').updateOne(
+                                    { uid: challenge.uid },
+                                    { $inc: {
+                                        total: reward,
+                                        bonus: reward
+                                    }}
+                                );
+
+                                // 排名从 1 开始算 (i + 1)
+                                // 这里的 round.name 直接取自上面 find 出来的缓存，不用再进库查一次了
+                                const currentLog = `[天梯赛排名奖励] 在 ${round.name} 中获得第 ${i + 1} 名，奖励 ${reward} 金币`;
+
+                                // 写入账单
+                                await db.collection('bills').insertOne({
+                                    createAt: new Date(),
+                                    rootId: 1,
+                                    uid: challenge.uid,
+                                    goodsId: String(challenge.stageId),
+                                    coins: reward,
+                                    content: currentLog,
+                                    check: 2
+                                });
+                            }
                         }
-                    );
+                    }
 
-                    // 如果要添加天梯赛额外奖励，可在此处进行金币奖励的实现
+                    // 3.1 批量把这一批轮次的状态关闭
+                    await db.collection('stages_ladder_round').updateMany(
+                        { _id: { $in: expiredRoundIds } },
+                        { $set: { isActive: false } }
+                    );
 
                     // 4. 更新关卡表（仅更新过期轮次绑定的关卡）
                     await db.collection('stages').updateMany(
                         { 
                             _id: { $in: stageIds },  // 匹配查找到的关卡ID
-                            status: { $ne: 0 }       // 只更新非0状态的关卡（可选优化）
+                            status: { $ne: 0 }       // 只更新非0状态的关卡
                         },
                         { 
                             $set: { status: 0 } 
@@ -336,7 +371,7 @@ class StagesHandler extends Handler {
                     const activeRound = await db.collection('stages_ladder_round').findOne({ isActive: true });
 
                     // 依赖于金币插件
-                    const currentLog = "[购买天梯赛入场券] " + activeRound.name;
+                    const currentLog = "[入场天梯赛] " + activeRound.name;
                     await db.collection('bills').insertOne({
                         createAt: new Date(),
                         rootId: this.user._id,
